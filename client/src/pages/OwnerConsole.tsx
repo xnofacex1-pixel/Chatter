@@ -847,6 +847,7 @@ export default function OwnerConsole() {
 
         {tab === 'staff' && (
           <>
+            {section !== 'permissions' && (
             <div className="owner-panel">
               <h3>Grant staff access</h3>
               <div className="owner-form">
@@ -932,8 +933,10 @@ export default function OwnerConsole() {
               </div>
             </div>
 
+            )}
+
             <div className="owner-panel">
-              <h3>Current staff</h3>
+              <h3>{staffTitle}</h3>
               {staffError && <div className="call-error-inline" role="alert"><IconWarning size={15} /> {staffError}</div>}
               <div className="owner-table-wrap">
                 <table className="owner-table">
@@ -947,7 +950,7 @@ export default function OwnerConsole() {
                     </tr>
                   </thead>
                   <tbody>
-                    {staff.map((entry) => (
+                    {staffVisible.map((entry) => (
                       <tr key={entry.id}>
                         <td>
                           <div className="owner-user-cell">
@@ -978,7 +981,7 @@ export default function OwnerConsole() {
                     ))}
                   </tbody>
                 </table>
-                {staff.length === 0 && <div className="owner-empty">No staff members yet. Grant a role above.</div>}
+                {staffVisible.length === 0 && <div className="owner-empty">No staff members in this group yet.</div>}
               </div>
             </div>
           </>
@@ -1057,9 +1060,11 @@ export default function OwnerConsole() {
 
         {tab === 'settings' && settingsDraft && (
           <div className="owner-panel">
-            <h3>Platform configuration</h3>
+            <h3>{PLATFORM_TITLE[section] ?? 'Platform configuration'}</h3>
             {settingsError && <div className="call-error-inline" role="alert"><IconWarning size={15} /> {settingsError}</div>}
             <div className="owner-form">
+              {section === 'application' && (
+                <>
               <label className="field">
                 <span>Application name</span>
                 <input
@@ -1076,6 +1081,9 @@ export default function OwnerConsole() {
                   onChange={(event) => setSettingsDraft({ ...settingsDraft, accentColor: event.target.value })}
                 />
               </label>
+                </>
+              )}
+              {section === 'uploads' && (
               <label className="field">
                 <span>Upload limit (MB)</span>
                 <input
@@ -1089,6 +1097,8 @@ export default function OwnerConsole() {
                   }
                 />
               </label>
+              )}
+              {section === 'announcements' && (
               <label className="field full">
                 <span>Platform announcement</span>
                 <textarea
@@ -1098,9 +1108,11 @@ export default function OwnerConsole() {
                   onChange={(event) => setSettingsDraft({ ...settingsDraft, announcement: event.target.value })}
                 />
               </label>
+              )}
               <div className="field full">
                 <span>Controls</span>
                 <div className="owner-checks">
+                  {section === 'registration' && (
                   <label className="owner-check">
                     <input
                       type="checkbox"
@@ -1109,6 +1121,8 @@ export default function OwnerConsole() {
                     />
                     Registration open
                   </label>
+                  )}
+                  {(section === 'registration' || section === 'application') && (
                   <label className="owner-check">
                     <input
                       type="checkbox"
@@ -1117,6 +1131,8 @@ export default function OwnerConsole() {
                     />
                     Moderation enabled
                   </label>
+                  )}
+                  {section === 'maintenance' && (
                   <label className="owner-check">
                     <input
                       type="checkbox"
@@ -1125,6 +1141,7 @@ export default function OwnerConsole() {
                     />
                     Maintenance mode
                   </label>
+                  )}
                 </div>
               </div>
               <div className="field full">
@@ -1179,7 +1196,7 @@ export default function OwnerConsole() {
                   </tr>
                 </thead>
                 <tbody>
-                  {audit.map((entry) => (
+                  {auditVisible.map((entry) => (
                     <tr key={entry.id}>
                       <td><span className="owner-audit-action">{entry.action}</span></td>
                       <td>{entry.actorName ?? entry.actorUsername ?? 'System'}</td>
@@ -1190,7 +1207,7 @@ export default function OwnerConsole() {
                   ))}
                 </tbody>
               </table>
-              {audit.length === 0 && <div className="owner-empty">No audit entries recorded yet.</div>}
+              {auditVisible.length === 0 && <div className="owner-empty">No audit entries recorded yet.</div>}
             </div>
           </div>
         )}
