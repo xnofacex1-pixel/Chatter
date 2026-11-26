@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AppShell, DefaultSidebar, MemberList, useDirectory } from '../components/AppShell';
+import { AppShell, DefaultSidebar } from '../components/AppShell';
 import { useToast } from '../components/Toast';
-import { IconBell, IconCheck, IconLock, IconLogout, IconMic, IconMonitor, IconSettings, IconShield, IconSparkle, IconUser } from '../components/icons';
+import { IconBell, IconCheck, IconHeadphones, IconLock, IconLogout, IconMic, IconMonitor, IconSettings, IconShield, IconSparkle, IconUser } from '../components/icons';
 import { api, type SessionInfo, type Settings as SettingsType } from '../lib/api';
 import { DEFAULT_SETTINGS, useAuth } from '../lib/auth';
 import { ACCENT_COLOURS, formatDateTime, relativeTime } from '../lib/format';
 import { describeError, emailProblem, passwordProblem, usernameProblem } from '../lib/validation';
 import { DeviceSettings } from '../components/DeviceSettings';
+import { SoundSettingsPanel } from '../components/SoundSettings';
 
-type TabId = 'account' | 'privacy' | 'appearance' | 'notifications' | 'voice' | 'accessibility' | 'sessions' | 'danger';
+type TabId = 'account' | 'privacy' | 'appearance' | 'notifications' | 'voice' | 'sounds' | 'accessibility' | 'sessions' | 'danger';
 
 const TABS: { id: TabId; label: string; icon: (props: { size?: number }) => React.ReactElement }[] = [
   { id: 'account', label: 'Account', icon: IconUser },
@@ -17,6 +18,7 @@ const TABS: { id: TabId; label: string; icon: (props: { size?: number }) => Reac
   { id: 'appearance', label: 'Appearance', icon: IconSparkle },
   { id: 'notifications', label: 'Notifications', icon: IconBell },
   { id: 'voice', label: 'Voice & video', icon: IconMic },
+  { id: 'sounds', label: 'Sounds', icon: IconHeadphones },
   { id: 'accessibility', label: 'Accessibility', icon: IconSettings },
   { id: 'sessions', label: 'Devices', icon: IconMonitor },
   { id: 'danger', label: 'Danger zone', icon: IconShield },
@@ -24,7 +26,6 @@ const TABS: { id: TabId; label: string; icon: (props: { size?: number }) => Reac
 
 export default function Settings() {
   const { user, settings, setUser, setSettings, saveSettings, logout } = useAuth();
-  const directory = useDirectory();
   const toast = useToast();
   const navigate = useNavigate();
   const [tab, setTab] = useState<TabId>('account');
@@ -38,7 +39,6 @@ export default function Settings() {
       title="Settings"
       subtitle="Account, privacy, appearance and security"
       sidebar={<DefaultSidebar active="settings" />}
-      members={<MemberList users={directory.users} loading={directory.loading} />}
     >
       <div className="stack" style={{ gap: 16 }}>
         <div className="row" style={{ gap: 6, flexWrap: 'wrap' }} role="tablist" aria-label="Settings sections">
@@ -64,6 +64,7 @@ export default function Settings() {
         {tab === 'appearance' && <AppearanceSection prefs={prefs} />}
         {tab === 'notifications' && <NotificationSection prefs={prefs} />}
         {tab === 'voice' && <DeviceSettings />}
+        {tab === 'sounds' && <SoundSettingsPanel />}
         {tab === 'accessibility' && <AccessibilitySection prefs={prefs} />}
         {tab === 'sessions' && <SessionsSection />}
         {tab === 'danger' && <DangerSection />}
