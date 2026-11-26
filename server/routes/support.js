@@ -99,7 +99,11 @@ const parseAttachments = (value) => {
 const userSummary = (userId) => {
   if (!userId) return null;
   const row = db
-    .prepare('SELECT id, username, display_name, avatar_media_id, is_owner, title FROM users WHERE id = ?')
+    .prepare(
+      `SELECT u.id, u.username, u.display_name, u.is_owner, u.title, p.avatar_media_id
+         FROM users u LEFT JOIN user_profiles p ON p.user_id = u.id
+        WHERE u.id = ?`,
+    )
     .get(userId);
   if (!row) return null;
   return {
