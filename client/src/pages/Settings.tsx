@@ -2,15 +2,26 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AppShell, DefaultSidebar } from '../components/AppShell';
 import { useToast } from '../components/Toast';
-import { IconBell, IconCheck, IconHeadphones, IconLock, IconLogout, IconMic, IconMonitor, IconSettings, IconShield, IconSparkle, IconUser } from '../components/icons';
+import { IconBell, IconCheck, IconHeadphones, IconLifeBuoy, IconLock, IconLogout, IconMic, IconMonitor, IconSettings, IconShield, IconSparkle, IconUser } from '../components/icons';
 import { api, type SessionInfo, type Settings as SettingsType } from '../lib/api';
 import { DEFAULT_SETTINGS, useAuth } from '../lib/auth';
 import { ACCENT_COLOURS, formatDateTime, relativeTime } from '../lib/format';
 import { describeError, emailProblem, passwordProblem, usernameProblem } from '../lib/validation';
 import { DeviceSettings } from '../components/DeviceSettings';
 import { SoundSettingsPanel } from '../components/SoundSettings';
+import { tutorialApi, type TutorialProgress } from '../lib/tutorial';
 
-type TabId = 'account' | 'privacy' | 'appearance' | 'notifications' | 'voice' | 'sounds' | 'accessibility' | 'sessions' | 'danger';
+type TabId =
+  | 'account'
+  | 'privacy'
+  | 'appearance'
+  | 'notifications'
+  | 'voice'
+  | 'sounds'
+  | 'accessibility'
+  | 'sessions'
+  | 'help'
+  | 'danger';
 
 const TABS: { id: TabId; label: string; icon: (props: { size?: number }) => React.ReactElement }[] = [
   { id: 'account', label: 'Account', icon: IconUser },
@@ -21,6 +32,7 @@ const TABS: { id: TabId; label: string; icon: (props: { size?: number }) => Reac
   { id: 'sounds', label: 'Sounds', icon: IconHeadphones },
   { id: 'accessibility', label: 'Accessibility', icon: IconSettings },
   { id: 'sessions', label: 'Devices', icon: IconMonitor },
+  { id: 'help', label: 'Help & support', icon: IconLifeBuoy },
   { id: 'danger', label: 'Danger zone', icon: IconShield },
 ];
 
@@ -67,6 +79,7 @@ export default function Settings() {
         {tab === 'sounds' && <SoundSettingsPanel />}
         {tab === 'accessibility' && <AccessibilitySection prefs={prefs} />}
         {tab === 'sessions' && <SessionsSection />}
+        {tab === 'help' && <HelpSection />}
         {tab === 'danger' && <DangerSection />}
       </div>
     </AppShell>

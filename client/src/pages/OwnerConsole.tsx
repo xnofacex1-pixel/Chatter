@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { AppShell, DefaultSidebar } from '../components/AppShell';
 import { Avatar, OwnerBadge } from '../components/Avatar';
 import { useToast } from '../components/Toast';
+import SupportAdmin from '../components/SupportAdmin';
 import { useAuth } from '../lib/auth';
 import { ApiError } from '../lib/api';
 import {
@@ -15,6 +16,7 @@ import {
   IconHeadphones,
   IconHome,
   IconInfo,
+  IconLifeBuoy,
   IconLock,
   IconMail,
   IconMessage,
@@ -57,6 +59,7 @@ type Panel =
   | 'messages'
   | 'staff'
   | 'reports'
+  | 'support-tickets'
   | 'settings'
   | 'audit'
   | 'moderation';
@@ -142,6 +145,7 @@ const navGroups: { label: string; items: { id: Section; label: string; icon: typ
       { id: 'channels', label: 'Channels', icon: IconAt },
       { id: 'messages', label: 'Messages', icon: IconMessage },
       { id: 'reports', label: 'Reports', icon: IconWarning },
+      { id: 'support-tickets', label: 'Support tickets', icon: IconLifeBuoy },
     ],
   },
   {
@@ -1483,6 +1487,8 @@ export default function OwnerConsole() {
             </p>
           </div>
         )}
+
+        {section === 'support-tickets' && <SupportAdmin />}
 
         {section === 'notifications' && (
           <div className="owner-panel">
