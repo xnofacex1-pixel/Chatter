@@ -1,18 +1,35 @@
-/* Chatter design tokens — dark navy + neon cyan, light alternative */
+/* Chatter design tokens — one palette, one type scale, one spacing rhythm.
+   "Ink" foundation: deep navy + charcoal with a single cyan/blue accent.
+   Names here are consumed across the whole client (including runtime theme,
+   motion and accent attributes), so they stay stable. */
+
 :root {
   color-scheme: dark;
 
-  --font-sans: 'Chatter Sans', 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Cascadia Code', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --font-sans: 'Chatter Sans', 'Inter', 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', system-ui, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, 'Cascadia Code', Menlo, monospace;
 
   --text-scale: 1;
-  --radius-xs: 6px;
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
+
+  /* Type scale — compact and calm */
+  --fs-2xs: 0.6875rem;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.8125rem;
+  --fs-md: 0.875rem;
+  --fs-lg: 1rem;
+  --fs-xl: 1.125rem;
+  --fs-2xl: 1.375rem;
+  --fs-3xl: 1.75rem;
+
+  /* Radii */
+  --radius-xs: 5px;
+  --radius-sm: 8px;
+  --radius-md: 11px;
+  --radius-lg: 15px;
+  --radius-xl: 20px;
   --radius-pill: 999px;
 
+  /* Spacing rhythm (4px base) */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -22,29 +39,45 @@
   --space-7: 32px;
   --space-8: 40px;
 
-  --sidebar-rail: 76px;
-  --sidebar-channels: 244px;
-  --sidebar-members: 250px;
+  /* Layout */
+  --sidebar-rail: 72px;
+  --sidebar-channels: 288px;
+  --sidebar-members: 248px;
+  --topbar-h: 60px;
+  --tabbar-h: 60px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --tap: 44px;
 
-  --shadow-sm: 0 1px 2px rgba(2, 8, 20, 0.4);
-  --shadow-md: 0 12px 30px rgba(2, 8, 20, 0.42);
-  --shadow-lg: 0 28px 70px rgba(2, 8, 20, 0.55);
-  --glow-accent: 0 0 0 1px rgba(56, 189, 248, 0.32), 0 10px 34px rgba(34, 211, 238, 0.24);
+  /* Elevation — restrained */
+  --shadow-sm: 0 1px 2px rgba(3, 7, 14, 0.32);
+  --shadow-md: 0 6px 20px rgba(3, 7, 14, 0.34);
+  --shadow-lg: 0 18px 44px rgba(3, 7, 14, 0.44);
+  --shadow-pop: 0 10px 30px rgba(3, 7, 14, 0.5);
+  --glow-accent: 0 0 0 1px rgba(var(--accent-rgb) / 0.28);
 
+  /* Motion */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --dur-fast: 120ms;
-  --dur-base: 200ms;
-  --dur-slow: 340ms;
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --dur-fast: 110ms;
+  --dur-base: 180ms;
+  --dur-slow: 280ms;
 
-  --danger: #f8727d;
-  --danger-strong: #e5484d;
+  /* Semantic colour */
+  --danger: #f87179;
+  --danger-strong: #e0454d;
+  --danger-rgb: 224 69 77;
   --success: #3ddc97;
-  --warning: #fbbf24;
-  --gold: #f5c451;
-  --gold-deep: #b07d18;
+  --success-rgb: 61 220 151;
+  --warning: #f2b544;
+  --warning-rgb: 242 181 68;
+  --gold: #f0c65a;
+  --gold-deep: #a97a17;
+  --gold-rgb: 240 198 90;
 
-  /* Accent defaults (cyan) */
+  /* Accent defaults (cyan) — overridden by data-accent */
   --accent-50: #e8fbff;
   --accent-200: #a5f0ff;
   --accent-300: #67e8f9;
@@ -54,64 +87,90 @@
   --accent-contrast: #04212b;
   --accent-rgb: 34 211 238;
   --accent-secondary: #6366f1;
+
+  /* Fallbacks so first paint is never transparent */
+  --bg-deep: #060a12;
+  --bg-base: #0a0f1a;
+  --bg-raised: #101725;
+  --bg-panel: #0e1522;
+  --bg-panel-strong: #141d2d;
+  --bg-input: rgba(255, 255, 255, 0.045);
+  --bg-hover: rgba(255, 255, 255, 0.05);
+  --bg-active: rgba(34, 211, 238, 0.14);
+  --bg-glass: rgba(12, 18, 29, 0.74);
+  --bg-glass-strong: rgba(10, 15, 25, 0.9);
+  --bg-scrim: rgba(4, 7, 13, 0.66);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --text-primary: #eef4fc;
+  --text-secondary: #a8b6c9;
+  --text-muted: #7c8ba1;
+  --text-faint: #5b6a80;
+  --text-inverse: #050b14;
+  --grid-line: rgba(255, 255, 255, 0.05);
+  --skeleton: linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.05));
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg-deep: #050a14;
-  --bg-base: #070d18;
-  --bg-raised: #0b1422;
-  --bg-panel: #0e1a2b;
-  --bg-panel-strong: #122033;
-  --bg-input: #0a1524;
-  --bg-hover: rgba(120, 170, 230, 0.08);
-  --bg-active: rgba(56, 189, 248, 0.14);
-  --bg-glass: rgba(12, 22, 37, 0.72);
-  --bg-glass-strong: rgba(10, 19, 32, 0.88);
-  --bg-scrim: rgba(3, 7, 15, 0.72);
+  --bg-deep: #060a12;
+  --bg-base: #0a0f1a;
+  --bg-raised: #101725;
+  --bg-panel: #0d1421;
+  --bg-panel-strong: #141d2d;
+  --bg-input: rgba(255, 255, 255, 0.045);
+  --bg-hover: rgba(255, 255, 255, 0.05);
+  --bg-active: rgba(var(--accent-rgb) / 0.14);
+  --bg-glass: rgba(12, 18, 29, 0.74);
+  --bg-glass-strong: rgba(10, 15, 25, 0.9);
+  --bg-scrim: rgba(4, 7, 13, 0.66);
 
-  --border-subtle: rgba(120, 165, 225, 0.12);
-  --border-default: rgba(120, 165, 225, 0.18);
-  --border-strong: rgba(130, 190, 245, 0.32);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.16);
 
-  --text-primary: #e9f1ff;
-  --text-secondary: #a9bcd6;
-  --text-muted: #758aa8;
-  --text-faint: #55678000;
-  --text-inverse: #04101c;
+  --text-primary: #eef4fc;
+  --text-secondary: #a8b6c9;
+  --text-muted: #7c8ba1;
+  --text-faint: #5b6a80;
+  --text-inverse: #050b14;
 
-  --grid-line: rgba(120, 170, 230, 0.06);
-  --skeleton: linear-gradient(90deg, rgba(120, 170, 230, 0.06), rgba(120, 170, 230, 0.14), rgba(120, 170, 230, 0.06));
+  --grid-line: rgba(255, 255, 255, 0.05);
+  --skeleton: linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.05));
 }
 
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg-deep: #e8eef8;
-  --bg-base: #f4f7fc;
+  --bg-deep: #e9eef6;
+  --bg-base: #f6f8fc;
   --bg-raised: #ffffff;
   --bg-panel: #ffffff;
-  --bg-panel-strong: #f7faff;
-  --bg-input: #eef3fa;
-  --bg-hover: rgba(23, 78, 140, 0.06);
-  --bg-active: rgba(14, 130, 175, 0.12);
-  --bg-glass: rgba(255, 255, 255, 0.78);
-  --bg-glass-strong: rgba(255, 255, 255, 0.92);
-  --bg-scrim: rgba(12, 28, 48, 0.32);
+  --bg-panel-strong: #f1f5fa;
+  --bg-input: #eef2f8;
+  --bg-hover: rgba(15, 35, 60, 0.05);
+  --bg-active: rgba(var(--accent-rgb) / 0.13);
+  --bg-glass: rgba(255, 255, 255, 0.82);
+  --bg-glass-strong: rgba(255, 255, 255, 0.94);
+  --bg-scrim: rgba(12, 26, 44, 0.3);
 
-  --border-subtle: rgba(24, 60, 110, 0.10);
-  --border-default: rgba(24, 60, 110, 0.16);
-  --border-strong: rgba(20, 90, 150, 0.28);
+  --border-subtle: rgba(15, 35, 60, 0.07);
+  --border-default: rgba(15, 35, 60, 0.12);
+  --border-strong: rgba(15, 35, 60, 0.22);
 
-  --text-primary: #0b1c30;
-  --text-secondary: #3c5473;
-  --text-muted: #5f7794;
-  --text-faint: #8095ae;
-  --text-inverse: #f7fbff;
+  --text-primary: #0c1725;
+  --text-secondary: #3d5170;
+  --text-muted: #63788f;
+  --text-faint: #8296ab;
+  --text-inverse: #ffffff;
 
   --accent-contrast: #ffffff;
-  --shadow-md: 0 12px 30px rgba(20, 50, 90, 0.12);
-  --shadow-lg: 0 28px 70px rgba(20, 50, 90, 0.16);
-  --skeleton: linear-gradient(90deg, rgba(30, 70, 120, 0.05), rgba(30, 70, 120, 0.12), rgba(30, 70, 120, 0.05));
+  --shadow-sm: 0 1px 2px rgba(18, 40, 70, 0.08);
+  --shadow-md: 0 8px 24px rgba(18, 40, 70, 0.1);
+  --shadow-lg: 0 20px 46px rgba(18, 40, 70, 0.14);
+  --shadow-pop: 0 12px 30px rgba(18, 40, 70, 0.16);
+  --grid-line: rgba(18, 40, 70, 0.05);
+  --skeleton: linear-gradient(90deg, rgba(18, 40, 70, 0.05), rgba(18, 40, 70, 0.11), rgba(18, 40, 70, 0.05));
 }
 
 /* Accent palettes */
@@ -138,8 +197,4 @@
 :root[data-accent='amber'] {
   --accent-50: #fff8e6; --accent-200: #fde68a; --accent-300: #fcd34d; --accent-400: #fbbf24;
   --accent-500: #f59e0b; --accent-600: #b45309; --accent-rgb: 245 158 11; --accent-secondary: #38bdf8;
-}
-
-:root[data-theme='light'] {
-  --accent-contrast: #ffffff;
 }
