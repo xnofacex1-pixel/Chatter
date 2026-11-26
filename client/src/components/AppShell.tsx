@@ -8,7 +8,6 @@ import { LogoMark } from './Logo';
 import {
   IconBell,
   IconCompass,
-  IconCrown,
   IconHeadphones,
   IconHeadphonesOff,
   IconHome,
@@ -91,12 +90,6 @@ export function AppShell({ children, title, subtitle, sidebar, members, headActi
             <span className="rail-tip">{link.label}</span>
           </NavLink>
         ))}
-        {user.isOwner && (
-          <NavLink to="/owner" className="rail-btn" aria-label="Owner console" style={{ color: 'var(--gold)' }}>
-            <IconCrown size={20} />
-            <span className="rail-tip">Owner console</span>
-          </NavLink>
-        )}
         <div className="rail-spacer" />
         <button type="button" className="rail-btn" aria-label="Sign out" onClick={handleLogout}>
           <IconLogout size={19} />
@@ -281,9 +274,10 @@ export function DefaultSidebar({ active }: { active: 'home' | 'members' | 'profi
           <IconSettings size={17} /> Settings
         </NavLink>
         {user?.isOwner && (
-          <NavLink to="/owner" className="nav-item" data-active={active === 'owner'} style={{ color: 'var(--gold)' }}>
+          <div className="nav-item" style={{ color: 'var(--gold)', cursor: 'default' }} title="The owner console arrives in Stage 5">
             <IconShield size={17} /> Owner console
-          </NavLink>
+            <span className="nav-count">Stage 5</span>
+          </div>
         )}
 
         <div className="nav-section-label">Roadmap</div>

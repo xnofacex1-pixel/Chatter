@@ -2,7 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 import { AppShell, DefaultSidebar, MemberList, useDirectory } from '../components/AppShell';
 import { Avatar, OwnerBadge } from '../components/Avatar';
 import { EmptyState, InlineLoader } from '../components/LoadingScreen';
-import { IconArrowLeft, IconUser } from '../components/icons';
+import { IconChevronLeft, IconUser } from '../components/icons';
 import { useAuth } from '../lib/auth';
 import { useAsyncData } from '../components/profile-shared';
 import { api } from '../lib/api';
@@ -25,7 +25,7 @@ export default function ProfileView() {
       members={<MemberList users={directory.users} loading={directory.loading} />}
       headActions={
         <Link className="btn btn-ghost btn-sm" to="/members">
-          <IconArrowLeft size={15} /> Members
+          <IconChevronLeft size={15} /> Members
         </Link>
       }
     >

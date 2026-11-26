@@ -2,7 +2,9 @@ export function formatDate(iso: string | null | undefined, opts: Intl.DateTimeFo
   if (!iso) return '—';
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '—';
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', ...opts }).format(date);
+  // Intl rejects combining dateStyle with granular fields, so pick one strategy.
+  const options: Intl.DateTimeFormatOptions = Object.keys(opts).length > 0 ? opts : { dateStyle: 'medium' };
+  return new Intl.DateTimeFormat(undefined, options).format(date);
 }
 
 export function formatDateTime(iso: string | null | undefined): string {

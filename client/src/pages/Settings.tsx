@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AppShell, DefaultSidebar, MemberList, useDirectory } from '../components/AppShell';
 import { useToast } from '../components/Toast';
-import { IconBell, IconCheck, IconDevice, IconLock, IconLogout, IconSettings, IconShield, IconSparkle, IconUser } from '../components/icons';
+import { IconBell, IconCheck, IconLock, IconLogout, IconMonitor, IconSettings, IconShield, IconSparkle, IconUser } from '../components/icons';
 import { api, type SessionInfo, type Settings as SettingsType } from '../lib/api';
 import { DEFAULT_SETTINGS, useAuth } from '../lib/auth';
 import { ACCENT_COLOURS, formatDateTime, relativeTime } from '../lib/format';
@@ -16,7 +16,7 @@ const TABS: { id: TabId; label: string; icon: (props: { size?: number }) => Reac
   { id: 'appearance', label: 'Appearance', icon: IconSparkle },
   { id: 'notifications', label: 'Notifications', icon: IconBell },
   { id: 'accessibility', label: 'Accessibility', icon: IconSettings },
-  { id: 'sessions', label: 'Devices', icon: IconDevice },
+  { id: 'sessions', label: 'Devices', icon: IconMonitor },
   { id: 'danger', label: 'Danger zone', icon: IconShield },
 ];
 
