@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
 import { Avatar, OwnerBadge } from '../components/Avatar';
 import { useToast } from '../components/Toast';
+import { PollCard, PollComposer } from '../components/polls';
+import { ThreadPanel } from '../components/ThreadPanel';
 import {
   IconCamera,
   IconCheck,
@@ -84,6 +86,8 @@ export default function Messages() {
   const [pending, setPending] = useState<AttachmentUpload[]>([]);
   const [uploading, setUploading] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [threadFor, setThreadFor] = useState<Message | null>(null);
+  const [pollOpen, setPollOpen] = useState(false);
   const [editing, setEditing] = useState<Message | null>(null);
   const [sending, setSending] = useState(false);
   const [typing, setTyping] = useState<Record<string, string>>({});
@@ -844,6 +848,16 @@ export default function Messages() {
                           ) : (
                             message.body && <p className="chat-msg-text">{message.body}</p>
                           )}
+                          {message.poll && (
+                            <PollCard
+                              poll={message.poll}
+                              canVote={Boolean(detail)}
+                              onVote={async (optionIds) => {
+                                const data = await api.votePoll(id, message.id, optionIds);
+                                upsert(data.message);
+                              }}
+                            />
+                          )}
                           {message.attachments.length > 0 && (
                             <div className="chat-attachments">
                               {message.attachments.map((attachment) =>
@@ -879,6 +893,20 @@ export default function Messages() {
                               ))}
                             </div>
                           )}
+                          <div className="chat-reactions">
+                            <button
+                              type="button"
+                              className="chat-reaction"
+                              onClick={() => setThreadFor(message)}
+                              aria-label={
+                                message.threadReplyCount > 0
+                                  ? `Open thread, ${message.threadReplyCount} replies`
+                                  : 'Start a thread'
+                              }
+                            >
+                              Thread{message.threadReplyCount > 0 ? ` · ${message.threadReplyCount}` : ''}
+                            </button>
+                          </div>
                           <div className="chat-msg-actions">
                             {QUICK_REACTIONS.slice(0, 4).map((emoji) => (
                               <button
@@ -1100,6 +1128,35 @@ export default function Messages() {
             </div>
           </div>
         </div>
+      )}
+      {pollOpen && (
+        <PollComposer
+          onCancel={() => setPollOpen(false)}
+          onSubmit={async (draft) => {
+            try {
+              const data = await api.sendMessage(id, {
+                poll: { question: draft.question, options: draft.options, multiple: draft.multiple },
+              });
+              upsert(data.message);
+              setPollOpen(false);
+            } catch (cause) {
+              toast.error('Poll not posted', cause instanceof ApiError ? cause.message : 'Please try again.');
+            }
+          }}
+        />
+      )}
+      {threadFor && (
+        <ThreadPanel
+          conversationId={id}
+          root={threadFor}
+          meId={me?.id ?? ''}
+          canSend={Boolean(detail)}
+          onClose={() => setThreadFor(null)}
+          onRootChanged={(updated) => {
+            upsert(updated);
+            setThreadFor(updated);
+          }}
+        />
       )}
     </AppShell>
   );
