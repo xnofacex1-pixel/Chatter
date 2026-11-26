@@ -158,7 +158,7 @@ try {
     'sender does not receive their own request notification',
   );
 
-  const accep  tRes = await bob.req(`/api/friends/requests/${requestId}/accept`, { method: 'POST' });
+  const acceptRes = await bob.req(`/api/friends/requests/${requestId}/accept`, { method: 'POST' });
   check(acceptRes.status === 200, 'friend request accepted', `status ${acceptRes.status}`);
 
   const aliceInbox = await alice.req('/api/notifications');
