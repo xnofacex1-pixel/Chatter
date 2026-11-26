@@ -25,6 +25,18 @@ function Icon({ size = 18, children, ...rest }: IconProps & { children: React.Re
 export const IconHome = (p: IconProps) => (
   <Icon {...p}><path d="M3 10.2 12 3l9 7.2" /><path d="M5.5 9.2V20a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V9.2" /><path d="M9.6 21v-6.2h4.8V21" /></Icon>
 );
+
+export const IconMegaphone = (p: IconProps) => (
+  <Icon {...p}><path d="M4 10v4a1 1 0 0 0 1 1h2l5 3V6L7 9H5a1 1 0 0 0-1 1Z" /><path d="M16 9.5a3 3 0 0 1 0 5" /></Icon>
+);
+
+export const IconForum = (p: IconProps) => (
+  <Icon {...p}><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h9A1.5 1.5 0 0 1 15 6.5v5A1.5 1.5 0 0 1 13.5 13H8l-3.5 3v-3H4.5A1.5 1.5 0 0 1 3 11.5Z" /><path d="M17.5 9.5h1A1.5 1.5 0 0 1 20 11v4.5a1.5 1.5 0 0 1-1.5 1.5H18v2.5L15 17" /></Icon>
+);
+
+export const IconImage = (p: IconProps) => (
+  <Icon {...p}><rect x="3.5" y="4.5" width="17" height="15" rx="2.5" /><circle cx="9" cy="10" r="1.6" /><path d="m4.5 17.5 4.6-4.4a1.5 1.5 0 0 1 2.1 0l3 2.9 1.8-1.7a1.5 1.5 0 0 1 2.1 0l1.4 1.4" /></Icon>
+);
 export const IconMessage = (p: IconProps) => (
   <Icon {...p}><path d="M20.5 11.6a8 8 0 0 1-11.7 7.1L4 20.4l1.7-4.7a8 8 0 1 1 14.8-4.1Z" /></Icon>
 );

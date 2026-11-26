@@ -217,7 +217,8 @@ export function serializeChannel(row, permissions) {
     userLimit: row.user_limit,
     conversationId: row.conversation_id,
     canView: has(permissions, P.VIEW_CHANNEL),
-    canSend: has(permissions, P.SEND_MESSAGES),
+    canSend:
+      has(permissions, P.SEND_MESSAGES) && (!row.read_only || has(permissions, P.MANAGE_MESSAGES)),
     canConnect: has(permissions, P.CONNECT),
     canManage: has(permissions, P.MANAGE_CHANNELS),
     unreadCount: 0,
