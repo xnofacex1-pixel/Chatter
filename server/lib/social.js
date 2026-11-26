@@ -34,7 +34,8 @@ export function friendsOf(userId) {
     .filter(Boolean);
 }
 
-const settingsRow = (userId) => db.prepare('SELECT * FROM user_settings WHERE user_id = ?').get(userId);
+export const settingsRow = (userId) =>
+  db.prepare('SELECT * FROM user_settings WHERE user_id = ?').get(userId);
 
 /**
  * Direct messaging rules, enforced server-side: blocks always win, then the
