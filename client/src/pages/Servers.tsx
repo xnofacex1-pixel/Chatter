@@ -13,6 +13,7 @@ import {
   has,
   P,
   serverApi,
+  type ChannelType,
   type NotificationLevel,
   type ServerChannel,
   type ServerDetail,
@@ -24,9 +25,12 @@ import {
   IconChevronDown,
   IconClose,
   IconCompass,
+  IconForum,
+  IconImage,
   IconHeadphones,
   IconHeadphonesOff,
   IconLock,
+  IconMegaphone,
   IconMic,
   IconMicOff,
   IconMonitor,
@@ -124,7 +128,7 @@ export default function Servers() {
 
   useEffect(() => {
     if (!detail || channelId) return;
-    const first = detail.channels.find((channel) => channel.type === 'text');
+    const first = detail.channels.find((channel) => channel.type !== 'voice');
     if (first) navigate(`/servers/${detail.server.id}/${first.id}`, { replace: true });
   }, [detail, channelId, navigate]);
 
@@ -294,7 +298,7 @@ export default function Servers() {
                     className="channel-row"
                     data-active={channel.id === channelId}
                   >
-                    {channel.type === 'voice' ? <IconHeadphones size={16} /> : <span className="channel-hash-sm">#</span>}
+                    <ChannelGlyph type={channel.type} />
                     <span className="truncate grow">{channel.name}</span>
                     {channel.isPrivate && <IconLock size={12} />}
                     {channel.unreadCount > 0 && <span className="nav-count">{channel.unreadCount}</span>}
@@ -412,7 +416,7 @@ export default function Servers() {
               </button>
             </div>
           </div>
-        ) : activeChannel && activeChannel.type === 'text' ? (
+        ) : activeChannel && activeChannel.type !== 'voice' ? (
           <ChannelChat
             channel={activeChannel}
             serverId={detail.server.id}
@@ -490,7 +494,7 @@ export default function Servers() {
           onCreated={async (channel) => {
             setModal(null);
             await loadDetail(serverId);
-            if (channel.type === 'text') navigate(`/servers/${serverId}/${channel.id}`);
+            if (channel.type !== 'voice') navigate(`/servers/${serverId}/${channel.id}`);
           }}
         />
       )}
@@ -814,7 +818,7 @@ function CreateChannelModal({
   onCreated: (channel: ServerChannel) => void;
 }) {
   const [name, setName] = useState('');
-  const [type, setType] = useState<'text' | 'voice'>('text');
+  const [type, setType] = useState<ChannelType>('text');
   const [categoryId, setCategoryId] = useState('');
   const [topic, setTopic] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
@@ -848,14 +852,30 @@ function CreateChannelModal({
     <ModalShell title="Create a channel" onClose={onClose}>
       <div className="stack" style={{ gap: 12 }}>
         <div className="row" style={{ gap: 8 }}>
-          <button type="button" className={`btn btn-sm ${type === 'text' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setType('text')}>Text</button>
-          <button type="button" className={`btn btn-sm ${type === 'voice' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setType('voice')}>Voice</button>
+          {(
+            [
+              ['text', 'Text'],
+              ['announcement', 'Announcement'],
+              ['forum', 'Forum'],
+              ['media', 'Media'],
+              ['voice', 'Voice'],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={`btn btn-sm ${type === value ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => setType(value)}
+            >
+              {label}
+            </button>
+          ))}
         </div>
         <label className="field">
           <span className="field-label">Channel name</span>
-          <input className="input" value={name} onChange={(event) => setName(event.target.value)} placeholder={type === 'text' ? 'general' : 'Lounge'} maxLength={40} />
+          <input className="input" value={name} onChange={(event) => setName(event.target.value)} placeholder={type === 'voice' ? 'Lounge' : type === 'announcement' ? 'announcements' : type === 'forum' ? 'ideas' : type === 'media' ? 'screenshots' : 'general'} maxLength={40} />
         </label>
-        {type === 'text' && (
+        {type !== 'voice' && (
           <label className="field">
             <span className="field-label">Topic</span>
             <input className="input" value={topic} onChange={(event) => setTopic(event.target.value)} maxLength={160} placeholder="What is this channel for?" />
@@ -870,7 +890,7 @@ function CreateChannelModal({
             ))}
           </select>
         </label>
-        {type === 'text' && (
+        {type !== 'voice' && (
           <label className="field">
             <span className="field-label">Slowmode (seconds)</span>
             <input className="input" type="number" min={0} max={21600} value={slowmode} onChange={(event) => setSlowmode(event.target.value)} />
@@ -880,7 +900,7 @@ function CreateChannelModal({
           <input type="checkbox" checked={isPrivate} onChange={(event) => setIsPrivate(event.target.checked)} />
           <span className="small">Private — only visible to members with access</span>
         </label>
-        {type === 'text' && (
+        {type !== 'voice' && type !== 'announcement' && (
           <label className="row" style={{ gap: 8 }}>
             <input type="checkbox" checked={readOnly} onChange={(event) => setReadOnly(event.target.checked)} />
             <span className="small">Read-only for ordinary members</span>
