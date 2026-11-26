@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { IconCheck, IconHeadphones, IconMic } from './icons';
+import { IconHeadphones, IconMic } from './icons';
 import {
   getSoundSettings,
   previewSound,
@@ -47,15 +47,14 @@ export function SoundSettingsPanel() {
               <span style={{ fontWeight: 600 }}>Master sound</span>
               <span className="tiny muted">Turn every Chatter call and voice cue on or off.</span>
             </div>
-            <label className="switch">
-              <input
-                type="checkbox"
-                checked={prefs.enabled}
-                onChange={(event) => update({ ...prefs, enabled: event.target.checked })}
-                aria-label="Enable Chatter sounds"
-              />
-              <span />
-            </label>
+            <button
+              type="button"
+              className="switch"
+              role="switch"
+              aria-checked={prefs.enabled}
+              aria-label="Enable Chatter sounds"
+              onClick={() => update({ ...prefs, enabled: !prefs.enabled })}
+            />
           </div>
 
           <div className="stack" style={{ gap: 6 }}>
@@ -116,16 +115,15 @@ export function SoundSettingsPanel() {
                   >
                     Preview
                   </button>
-                  <label className="switch">
-                    <input
-                      type="checkbox"
-                      checked={prefs.cues[cue.name]}
-                      onChange={() => toggleCue(cue.name)}
-                      aria-label={`${cue.label} sound`}
-                      disabled={!prefs.enabled}
-                    />
-                    <span>{prefs.cues[cue.name] ? <IconCheck size={11} /> : null}</span>
-                  </label>
+                  <button
+                    type="button"
+                    className="switch"
+                    role="switch"
+                    aria-checked={prefs.cues[cue.name]}
+                    aria-label={`${cue.label} sound`}
+                    onClick={() => toggleCue(cue.name)}
+                    disabled={!prefs.enabled}
+                  />
                 </div>
               </div>
             ))}
