@@ -110,7 +110,7 @@ async function signUp(c, username) {
   if (reg.status !== 201) throw new Error(`register ${username}: ${reg.status} ${reg.text.slice(0, 200)}`);
   const login = await c.req('/api/auth/login', { method: 'POST', body: { identifier: email, password: PASSWORD } });
   if (login.status !== 200) throw new Error(`login ${username}: ${login.status} ${login.text.slice(0, 200)}`);
-  return login.json?.user ?? null;
+  return { user: login.json?.user ?? null, email };
 }
 
 const server = spawn(process.execPath, ['server/index.js'], {
@@ -129,8 +129,10 @@ try {
   const alice = client();
   const bob = client();
   const anon = client();
-  const aliceUser = await signUp(alice, `s7alice${STAMP}`);
-  const bobUser = await signUp(bob, `s7bob${STAMP}`);
+  const aliceAccount = await signUp(alice, `s7alice${STAMP}`);
+  const bobAccount = await signUp(bob, `s7bob${STAMP}`);
+  const aliceUser = aliceAccount.user;
+  const bobUser = bobAccount.user;
   check(Boolean(aliceUser?.id && bobUser?.id), 'audit accounts created');
 
   // ---------------------------------------------------------------- sessions
@@ -145,9 +147,11 @@ try {
   check(replay.status === 401, 'revoked cookie cannot read notifications', `status ${replay.status}`);
   const relogin = await alice.req('/api/auth/login', {
     method: 'POST',
-    body: { identifier: `s7alice${STAMP}@example.com`, password: PASSWORD },
+    body: { identifier: aliceAccount.email, password: PASSWORD },
   });
   check(relogin.status === 200, 'signing back in issues a fresh session');
+  const freshSession = await alice.req('/api/me');
+  check(freshSession.status === 200, 'fresh session cookie restores account access', `status ${freshSession.status}`);
 
   // -------------------------------------------------- unauthenticated sweep
   console.log('\nStage 7 — unauthenticated access sweep');
@@ -206,7 +210,7 @@ try {
 
   // ----------------------------------------------------------- pagination
   console.log('\nStage 7 — message pagination');
-  const dm = await bob.req('/api/conversations', { method: 'POST', body: { userId: aliceUser?.id } });
+  const dm = await bob.req('/api/conversations', { method: 'POST', body: { kind: 'dm', userIds: [aliceUser?.id] } });
   const conversationId = dm.json?.conversation?.id;
   check(Boolean(conversationId), 'direct conversation created for paging', `status ${dm.status}`);
 
