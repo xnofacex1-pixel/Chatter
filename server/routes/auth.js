@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { addDays, addMinutes, db, nowIso, transaction } from '../db.js';
 import { clientIp, fail, route } from '../lib/http.js';
 import { fakeVerify, hashPassword, passwordProblem, verifyPassword } from '../lib/passwords.js';
-import { mailConfigured, sendPasswordResetEmail, sendVerificationEmail } from '../lib/mailer.js';
+import { mailConfigured, sendPasswordResetEmail } from '../lib/mailer.js';
 import { publicUser, settingsFor, touchPresence } from '../lib/presenters.js';
 import { rateLimit } from '../lib/rate-limit.js';
 import {
@@ -47,7 +47,6 @@ const loginSchema = z.object({
 });
 
 const emailSchema = z.object({ email: z.string().trim().min(5).max(254).regex(EMAIL_RE, 'Enter a valid email address.') });
-const tokenSchema = z.object({ token: z.string().trim().min(10).max(200) });
 const resetSchema = z.object({ token: z.string().trim().min(10).max(200), password: z.string().min(1).max(200) });
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1).max(200),
@@ -71,16 +70,6 @@ function respondWithSession(res, user, extra = {}) {
     settings: settingsFor(user.id),
     ...extra,
   });
-}
-
-/** Dev-only convenience: expose the verification link when no mail provider is configured. */
-function verificationDelivery(result) {
-  const expose = process.env.NODE_ENV !== 'production' && !result.delivered;
-  return {
-    emailSent: result.delivered,
-    emailConfigured: mailConfigured(),
-    ...(expose ? { verificationUrl: result.url } : {}),
-  };
 }
 
 router.post(
