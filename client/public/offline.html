@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chatter — You are offline</title>
+    <meta name="theme-color" content="#070d18" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+        color: #dbe8fb;
+        background: radial-gradient(circle at 50% 15%, #12233d 0%, #070d18 65%);
+      }
+      .card {
+        max-width: 460px;
+        width: 100%;
+        text-align: center;
+        padding: 40px 28px;
+        border-radius: 22px;
+        border: 1px solid rgba(125, 211, 252, 0.18);
+        background: rgba(12, 22, 38, 0.82);
+        box-shadow: 0 30px 80px rgba(2, 8, 20, 0.65);
+      }
+      .mark {
+        width: 64px; height: 64px; margin: 0 auto 20px; border-radius: 18px;
+        background: linear-gradient(140deg, #38bdf8, #22d3ee 55%, #6366f1);
+        box-shadow: 0 0 40px rgba(56, 189, 248, 0.4);
+      }
+      h1 { font-size: 22px; margin: 0 0 10px; letter-spacing: -0.02em; }
+      p { margin: 0 0 8px; font-size: 14px; line-height: 1.6; color: #9db0cc; }
+      a {
+        display: inline-block; margin-top: 20px; padding: 11px 20px; border-radius: 12px;
+        text-decoration: none; font-weight: 600; font-size: 14px; color: #04121f;
+        background: linear-gradient(135deg, #7dd3fc, #22d3ee);
+      }
+      .tiny { font-size: 12px; color: #6f819c; margin-top: 18px; }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="mark" aria-hidden="true"></div>
+      <h1>You are offline</h1>
+      <p>Chatter could not reach the network. Messages already on screen stay put, but new ones need a connection.</p>
+      <p>Reconnect to Wi-Fi or mobile data, then try again.</p>
+      <a href="/">Retry Chatter</a>
+      <div class="tiny">Your community. Your conversations. Your Chatter.</div>
+    </main>
+  </body>
+</html>
