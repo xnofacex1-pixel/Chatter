@@ -2,19 +2,21 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AppShell, DefaultSidebar, MemberList, useDirectory } from '../components/AppShell';
 import { useToast } from '../components/Toast';
-import { IconBell, IconCheck, IconLock, IconLogout, IconMonitor, IconSettings, IconShield, IconSparkle, IconUser } from '../components/icons';
+import { IconBell, IconCamera, IconCheck, IconHeadphones, IconLock, IconLogout, IconMic, IconMonitor, IconSettings, IconShield, IconSparkle, IconUser } from '../components/icons';
 import { api, type SessionInfo, type Settings as SettingsType } from '../lib/api';
 import { DEFAULT_SETTINGS, useAuth } from '../lib/auth';
 import { ACCENT_COLOURS, formatDateTime, relativeTime } from '../lib/format';
 import { describeError, emailProblem, passwordProblem, usernameProblem } from '../lib/validation';
+import { DeviceSettings } from '../components/DeviceSettings';
 
-type TabId = 'account' | 'privacy' | 'appearance' | 'notifications' | 'accessibility' | 'sessions' | 'danger';
+type TabId = 'account' | 'privacy' | 'appearance' | 'notifications' | 'voice' | 'accessibility' | 'sessions' | 'danger';
 
 const TABS: { id: TabId; label: string; icon: (props: { size?: number }) => React.ReactElement }[] = [
   { id: 'account', label: 'Account', icon: IconUser },
   { id: 'privacy', label: 'Privacy', icon: IconLock },
   { id: 'appearance', label: 'Appearance', icon: IconSparkle },
   { id: 'notifications', label: 'Notifications', icon: IconBell },
+  { id: 'voice', label: 'Voice & video', icon: IconMic },
   { id: 'accessibility', label: 'Accessibility', icon: IconSettings },
   { id: 'sessions', label: 'Devices', icon: IconMonitor },
   { id: 'danger', label: 'Danger zone', icon: IconShield },
@@ -61,6 +63,7 @@ export default function Settings() {
         {tab === 'privacy' && <PrivacySection prefs={prefs} />}
         {tab === 'appearance' && <AppearanceSection prefs={prefs} />}
         {tab === 'notifications' && <NotificationSection prefs={prefs} />}
+        {tab === 'voice' && <DeviceSettings />}
         {tab === 'accessibility' && <AccessibilitySection prefs={prefs} />}
         {tab === 'sessions' && <SessionsSection />}
         {tab === 'danger' && <DangerSection />}
