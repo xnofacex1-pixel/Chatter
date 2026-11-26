@@ -12,6 +12,7 @@ import { useAuth } from './auth';
 import { useRealtime } from './realtime';
 import { ApiError } from './api';
 import { callApi, type CallKind, type CallView } from './calls';
+import { playSound } from './sounds';
 import {
   MeshSession,
   createLevelMeter,
@@ -147,6 +148,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
   const cameraTrackRef = useRef<MediaStreamTrack | null>(null);
   const previousMicRef = useRef(false);
   const stopShareRef = useRef<() => Promise<void>>(async () => undefined);
+  const joinedRef = useRef<Set<string>>(new Set());
   const supported = typeof navigator !== 'undefined' && Boolean(navigator.mediaDevices?.getUserMedia);
 
   const reportLevel = useCallback((userId: string, level: number) => {
@@ -189,6 +191,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
     localRef.current?.getTracks().forEach((track) => track.stop());
     localRef.current = null;
     callRef.current = null;
+    joinedRef.current = new Set();
     setCall(null);
     setLocalStream(null);
     setRemoteStreams({});
@@ -249,7 +252,12 @@ export function CallProvider({ children }: { children: ReactNode }) {
       setScreenOn(Boolean(me?.screenOn));
       session.setAudioEnabled(!muted && !isDeafened);
       cameraTrackRef.current = stream.getVideoTracks()[0] ?? null;
+      joinedRef.current = new Set(
+        next.participants.filter((entry) => entry.state === 'joined').map((entry) => entry.userId),
+      );
       setPhase('live');
+      // The join cue only fires once media capture and the call entry succeeded.
+      playSound(next.channelId ? 'voiceJoin' : 'callConnect');
     },
     [buildSession],
   );
@@ -264,6 +272,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
         stream = await captureMedia(input.kind, inputId, cameraId);
         const { call: created } = await callApi.start(input);
         enterCall(created, stream);
+        if (created.status === 'ringing') playSound('callOutgoing');
         void refreshDevicesInternal();
       } catch (caught) {
         stream?.getTracks().forEach((track) => track.stop());
@@ -316,23 +325,27 @@ export function CallProvider({ children }: { children: ReactNode }) {
 
   const leave = useCallback(async () => {
     const current = callRef.current;
+    playSound(current?.channelId ? 'voiceLeave' : 'callEnded');
     teardown();
     if (current) await callApi.leave(current.id).catch(() => undefined);
   }, [teardown]);
 
   const endForEveryone = useCallback(async () => {
     const current = callRef.current;
+    playSound('callEnded');
     teardown();
     if (current) await callApi.end(current.id).catch(() => undefined);
   }, [teardown]);
 
   const acceptIncoming = useCallback(async () => {
     if (!incoming) return;
+    playSound('callAccepted');
     await join(incoming.id);
   }, [incoming, join]);
 
   const declineIncoming = useCallback(async () => {
     const current = incoming;
+    playSound('callDeclined');
     setIncoming(null);
     if (current) await callApi.leave(current.id).catch(() => undefined);
   }, [incoming]);
@@ -342,6 +355,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
     if (!current) return;
     const next = !micMuted;
     setMicMuted(next);
+    playSound(next ? 'micMute' : 'micUnmute');
     sessionRef.current?.setAudioEnabled(!next && !deafened);
     await callApi.setState(current.id, { micMuted: next }).catch(() => undefined);
   }, [deafened, micMuted]);
@@ -351,6 +365,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
     if (!current) return;
     const next = !deafened;
     setDeafened(next);
+    playSound(next ? 'micMute' : 'micUnmute');
     let mic = micMuted;
     if (next) {
       previousMicRef.current = micMuted;
@@ -379,6 +394,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
       if (track) stream.removeTrack(track);
       await sessionRef.current?.useVideoTrack(null);
       setVideoOn(false);
+      playSound('cameraOff');
       await callApi.setState(current.id, { videoOn: false }).catch(() => undefined);
       return;
     }
@@ -390,6 +406,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
       stream.addTrack(track);
       await sessionRef.current?.useVideoTrack(track);
       setVideoOn(true);
+      playSound('cameraOn');
       await callApi.setState(current.id, { videoOn: true }).catch(() => undefined);
     } catch (caught) {
       setError(mediaErrorMessage(caught));
@@ -403,6 +420,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
     track?.stop();
     setScreenOn(false);
     setScreenStream(null);
+    playSound('screenShareStop');
     await sessionRef.current?.useVideoTrack(cameraTrackRef.current);
     if (current) await callApi.setState(current.id, { screenOn: false }).catch(() => undefined);
   }, []);
@@ -427,6 +445,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
       });
       await sessionRef.current?.useVideoTrack(track);
       setScreenOn(true);
+      playSound('screenShareStart');
       await callApi.setState(current.id, { screenOn: true }).catch(() => undefined);
     } catch (caught) {
       const name = (caught as { name?: string } | null)?.name;
@@ -497,7 +516,10 @@ export function CallProvider({ children }: { children: ReactNode }) {
     (event, data) => {
       const payload = data as { call?: CallView; callId?: string; from?: string; data?: CallSignal };
       if (event === 'call:incoming' && payload.call) {
-        if (!callRef.current) setIncoming(payload.call);
+        if (!callRef.current) {
+          setIncoming(payload.call);
+          playSound('callIncoming');
+        }
         return;
       }
       if (event === 'call:updated' && payload.call) {
@@ -505,11 +527,27 @@ export function CallProvider({ children }: { children: ReactNode }) {
         setIncoming((prev) => (prev && prev.id === next.id && next.status !== 'ringing' ? null : prev));
         if (callRef.current?.id !== next.id) return;
         if (next.status === 'ended') {
+          playSound('callEnded');
           teardown();
           return;
         }
         callRef.current = next;
         setCall(next);
+        const joinedNow = new Set(
+          next.participants.filter((entry) => entry.state === 'joined').map((entry) => entry.userId),
+        );
+        const before = joinedRef.current;
+        for (const userId of joinedNow) {
+          if (!before.has(userId) && userId !== selfIdRef.current) {
+            playSound(next.channelId ? 'voiceMemberJoin' : 'callAccepted');
+          }
+        }
+        for (const userId of before) {
+          if (!joinedNow.has(userId) && userId !== selfIdRef.current) {
+            playSound(next.channelId ? 'voiceMemberLeave' : 'callEnded');
+          }
+        }
+        joinedRef.current = joinedNow;
         const session = sessionRef.current;
         if (session) {
           const live = new Set(
@@ -527,7 +565,10 @@ export function CallProvider({ children }: { children: ReactNode }) {
         return;
       }
       if (event === 'call:ended' && payload.callId) {
-        if (callRef.current?.id === payload.callId) teardown();
+        if (callRef.current?.id === payload.callId) {
+          playSound(callRef.current?.channelId ? 'voiceLeave' : 'callEnded');
+          teardown();
+        }
         setIncoming((prev) => (prev && prev.id === payload.callId ? null : prev));
       }
     },
