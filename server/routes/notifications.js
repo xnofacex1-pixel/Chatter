@@ -6,10 +6,14 @@ import { requireUser } from './me.js';
 
 export const router = Router();
 
+// Same guard the profile routes use: requireUser is Express middleware, so it
+// must be mounted rather than called inline.
+router.use(requireUser);
+
 router.get(
   '/',
   route(async (req, res) => {
-    const user = requireUser(req);
+    const user = req.user;
     const limit = Math.min(Math.max(Number(req.query.limit) || 40, 1), 100);
     const rows = db
       .prepare('SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT ?')
@@ -25,7 +29,7 @@ router.get(
 router.get(
   '/unread',
   route(async (req, res) => {
-    const user = requireUser(req);
+    const user = req.user;
     res.json({ unread: unreadCount(user.id) });
   }),
 );
@@ -33,7 +37,7 @@ router.get(
 router.post(
   '/read-all',
   route(async (req, res) => {
-    const user = requireUser(req);
+    const user = req.user;
     db.prepare('UPDATE notifications SET read_at = ? WHERE user_id = ? AND read_at IS NULL').run(nowIso(), user.id);
     res.json({ ok: true, unread: 0 });
   }),
@@ -43,7 +47,7 @@ router.post(
 router.delete(
   '/read',
   route(async (req, res) => {
-    const user = requireUser(req);
+    const user = req.user;
     const result = db.prepare('DELETE FROM notifications WHERE user_id = ? AND read_at IS NOT NULL').run(user.id);
     res.json({ ok: true, removed: result.changes, unread: unreadCount(user.id) });
   }),
@@ -52,7 +56,7 @@ router.delete(
 router.post(
   '/:id/read',
   route(async (req, res) => {
-    const user = requireUser(req);
+    const user = req.user;
     const row = db.prepare('SELECT * FROM notifications WHERE id = ? AND user_id = ?').get(req.params.id, user.id);
     if (!row) fail(404, 'notification_not_found', 'That notification is no longer available.');
     if (!row.read_at) db.prepare('UPDATE notifications SET read_at = ? WHERE id = ?').run(nowIso(), row.id);
@@ -63,7 +67,7 @@ router.post(
 router.delete(
   '/:id',
   route(async (req, res) => {
-    const user = requireUser(req);
+    const user = req.user;
     const row = db.prepare('SELECT * FROM notifications WHERE id = ? AND user_id = ?').get(req.params.id, user.id);
     if (!row) fail(404, 'notification_not_found', 'That notification is no longer available.');
     db.prepare('DELETE FROM notifications WHERE id = ?').run(row.id);
