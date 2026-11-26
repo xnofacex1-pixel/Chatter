@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AppShell, DefaultSidebar } from '../components/AppShell';
+import { AppShell } from '../components/AppShell';
 import { Avatar, OwnerBadge } from '../components/Avatar';
 import { useToast } from '../components/Toast';
 import {
   IconCheck,
-  IconChevronLeft,
   IconClose,
   IconMessage,
+  IconPin,
   IconPlus,
   IconSearch,
   IconTrash,
@@ -19,7 +19,6 @@ import {
   IconEdit,
   IconMore,
   IconPaperclip,
-  IconPin,
   IconReply,
   IconSend,
   IconSmile,
