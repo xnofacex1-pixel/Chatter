@@ -17,6 +17,7 @@ import { router as invitesRouter } from './routes/invites.js';
 import { router as callsRouter } from './routes/calls.js';
 import { router as adminRouter } from './routes/admin.js';
 import { router as notificationsRouter } from './routes/notifications.js';
+import { router as aiRouter } from './routes/ai.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
