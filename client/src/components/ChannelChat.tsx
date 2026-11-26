@@ -611,7 +611,7 @@ export function ChannelChat({
                   : 'You do not have permission to send messages here'
             }
             aria-label={`Message ${channel.name}`}
-            onChange={(event_) => onDraftChange(event_.value ?? event_.target.value)}
+            onChange={(event_) => onDraftChange(event_.target.value)}
             onKeyDown={(event_) => {
               if (event_.key === 'Enter' && !event_.shiftKey) {
                 event_.preventDefault();
@@ -669,7 +669,6 @@ export function ChannelChat({
         </div>
       )}
       {dragging && <div className="drop-hint">Drop files to upload</div>}
-      <IconMore size={1} />
     </div>
   );
 }
