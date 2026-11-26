@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AppShell from '../components/AppShell';
+import { AppShell } from '../components/AppShell';
 import TutorialCelebration from '../components/TutorialCelebration';
 import TutorialOverlay from '../components/TutorialOverlay';
 import { useAuth } from '../lib/auth';

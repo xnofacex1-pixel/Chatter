@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import AppShell from '../components/AppShell';
+import { AppShell } from '../components/AppShell';
 import { useAuth } from '../lib/auth';
 import {
   attachmentUrl,

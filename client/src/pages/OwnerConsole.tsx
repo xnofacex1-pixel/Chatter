@@ -73,6 +73,7 @@ type Section =
   | 'channels'
   | 'messages'
   | 'reports'
+  | 'support-tickets'
   | 'administrators'
   | 'moderators'
   | 'support'
