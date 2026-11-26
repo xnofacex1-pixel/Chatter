@@ -64,6 +64,79 @@ export type PlatformStats = {
   serverTime: string;
 };
 
+export type AttachmentUpload = {
+  id: string;
+  url: string;
+  mime: string;
+  byteSize: number;
+  kind: string;
+};
+
+export type MessageReaction = { emoji: string; count: number; me: boolean };
+
+export type Message = {
+  id: string;
+  conversationId: string;
+  body: string;
+  createdAt: string;
+  editedAt: string | null;
+  deletedAt: string | null;
+  pinnedAt: string | null;
+  author: User | null;
+  attachments: AttachmentUpload[];
+  reactions: MessageReaction[];
+  replyTo: { id: string; body: string; authorName: string } | null;
+};
+
+export type MessagePreview = {
+  id: string;
+  body: string;
+  createdAt: string;
+  deleted: boolean;
+  authorName: string;
+  authorId: string | null;
+} | null;
+
+export type Conversation = {
+  id: string;
+  kind: 'dm' | 'group';
+  title: string | null;
+  iconUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  lastMessageAt: string | null;
+  muted: boolean;
+  archived: boolean;
+  unreadCount: number;
+  memberCount: number;
+  members: User[];
+  partner: User | null;
+  lastMessage: MessagePreview;
+};
+
+export type ConversationMember = {
+  user: User;
+  role: 'owner' | 'member';
+  joinedAt: string;
+  muted: boolean;
+  lastReadAt: string | null;
+};
+
+export type FriendRequestItem = {
+  id: string;
+  message: string | null;
+  createdAt: string;
+  direction: 'incoming' | 'outgoing';
+  user: User | null;
+};
+
+export type FriendsPayload = {
+  friends: User[];
+  incoming: FriendRequestItem[];
+  outgoing: FriendRequestItem[];
+  blocked: { user: User; createdAt: string }[];
+};
+
 export class ApiError extends Error {
   status: number;
   code: string;
@@ -182,4 +255,84 @@ export const api = {
   user: (username: string) =>
     request<{ user: User; memberSince: string; viewerIsSelf: boolean }>(`/api/users/${encodeURIComponent(username)}`),
   stats: () => request<{ stats: PlatformStats; recentMembers: User[] }>('/api/stats'),
+
+  friends: () => request<FriendsPayload>('/api/friends'),
+  sendFriendRequest: (input: { userId?: string; username?: string; message?: string }) =>
+    request<{ request?: FriendRequestItem; autoAccepted?: boolean; friend?: User }>('/api/friends/requests', {
+      method: 'POST',
+      body: input,
+    }),
+  acceptFriendRequest: (id: string) =>
+    request<{ ok: boolean; friend: User }>(`/api/friends/requests/${id}/accept`, { method: 'POST' }),
+  declineFriendRequest: (id: string) =>
+    request<{ ok: boolean }>(`/api/friends/requests/${id}/decline`, { method: 'POST' }),
+  cancelFriendRequest: (id: string) => request<{ ok: boolean }>(`/api/friends/requests/${id}`, { method: 'DELETE' }),
+  removeFriend: (userId: string) => request<{ ok: boolean }>(`/api/friends/${userId}`, { method: 'DELETE' }),
+  blockUser: (userId: string) =>
+    request<{ ok: boolean; blocked: boolean }>(`/api/friends/block/${userId}`, { method: 'POST' }),
+  unblockUser: (userId: string) => request<{ ok: boolean }>(`/api/friends/block/${userId}`, { method: 'DELETE' }),
+
+  conversations: () => request<{ conversations: Conversation[]; totalUnread: number }>('/api/conversations'),
+  conversation: (id: string) =>
+    request<{ conversation: Conversation; members: ConversationMember[] }>(`/api/conversations/${id}`),
+  createConversation: (input: { kind: 'dm' | 'group'; userIds: string[]; title?: string }) =>
+    request<{ conversation: Conversation; existed: boolean }>('/api/conversations', { method: 'POST', body: input }),
+  updateConversation: (id: string, input: { title?: string }) =>
+    request<{ conversation: Conversation }>(`/api/conversations/${id}`, { method: 'PATCH', body: input }),
+  addConversationMembers: (id: string, userIds: string[]) =>
+    request<{ added: string[]; conversation: Conversation }>(`/api/conversations/${id}/members`, {
+      method: 'POST',
+      body: { userIds },
+    }),
+  removeConversationMember: (id: string, userId: string) =>
+    request<{ ok: boolean }>(`/api/conversations/${id}/members/${userId}`, { method: 'DELETE' }),
+  leaveConversation: (id: string) => request<{ ok: boolean }>(`/api/conversations/${id}/leave`, { method: 'POST' }),
+  conversationPreferences: (id: string, input: { muted?: boolean; archived?: boolean }) =>
+    request<{ conversation: Conversation }>(`/api/conversations/${id}/preferences`, { method: 'PATCH', body: input }),
+
+  messages: (id: string, params: { before?: string; beforeId?: string; limit?: number } = {}) => {
+    const search = new URLSearchParams();
+    if (params.before) search.set('before', params.before);
+    if (params.beforeId) search.set('beforeId', params.beforeId);
+    if (params.limit) search.set('limit', String(params.limit));
+    const query = search.toString();
+    return request<{ messages: Message[]; hasMore: boolean }>(
+      `/api/conversations/${id}/messages${query ? `?${query}` : ''}`,
+    );
+  },
+  sendMessage: (id: string, input: { body?: string; attachmentIds?: string[]; replyToId?: string | null }) =>
+    request<{ message: Message }>(`/api/conversations/${id}/messages`, { method: 'POST', body: input }),
+  editMessage: (id: string, messageId: string, body: string) =>
+    request<{ message: Message }>(`/api/conversations/${id}/messages/${messageId}`, {
+      method: 'PATCH',
+      body: { body },
+    }),
+  deleteMessage: (id: string, messageId: string) =>
+    request<{ ok: boolean; messageId: string }>(`/api/conversations/${id}/messages/${messageId}`, { method: 'DELETE' }),
+  reactToMessage: (id: string, messageId: string, emoji: string) =>
+    request<{ message: Message }>(`/api/conversations/${id}/messages/${messageId}/reactions`, {
+      method: 'POST',
+      body: { emoji },
+    }),
+  pinMessage: (id: string, messageId: string) =>
+    request<{ message: Message; pinned: boolean }>(`/api/conversations/${id}/messages/${messageId}/pin`, {
+      method: 'POST',
+    }),
+  pins: (id: string) => request<{ messages: Message[] }>(`/api/conversations/${id}/pins`),
+  markRead: (id: string, messageId?: string) =>
+    request<{ ok: boolean; lastReadAt: string }>(`/api/conversations/${id}/read`, {
+      method: 'POST',
+      body: { messageId },
+    }),
+  setTyping: (id: string, typing: boolean) =>
+    request<{ ok: boolean }>(`/api/conversations/${id}/typing`, { method: 'POST', body: { typing } }),
+  searchMessages: (query: string) =>
+    request<{ results: { message: Message; conversation: Conversation }[] }>(
+      `/api/messages/search?q=${encodeURIComponent(query)}`,
+    ),
+  uploadAttachment: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return request<{ attachment: AttachmentUpload }>('/api/attachments', { method: 'POST', formData });
+  },
 };
