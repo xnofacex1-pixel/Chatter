@@ -80,8 +80,6 @@ export default function Settings() {
     });
     const [error, setError] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
-    const [resendBusy, setResendBusy] = useState(false);
-    const [verificationUrl, setVerificationUrl] = useState<string | null>(null);
     const [passwords, setPasswords] = useState({ current: '', next: '', confirm: '' });
     const [passwordError, setPasswordError] = useState<string | null>(null);
     const [passwordBusy, setPasswordBusy] = useState(false);
@@ -108,22 +106,6 @@ export default function Settings() {
         setError(described.fields.username ?? described.fields.email ?? described.message);
       } finally {
         setBusy(false);
-      }
-    };
-
-    const resend = async () => {
-      setResendBusy(true);
-      try {
-        const result = await api.resendVerification();
-        setVerificationUrl(result.verificationUrl ?? null);
-        toast[result.emailSent ? 'success' : 'info'](
-          result.emailSent ? 'Verification email sent' : 'Email delivery is not configured',
-          result.emailSent ? 'Check your inbox.' : 'Use the development link shown below.',
-        );
-      } catch (caught) {
-        toast.error('Could not send verification', describeError(caught).message);
-      } finally {
-        setResendBusy(false);
       }
     };
 
@@ -262,34 +244,6 @@ export default function Settings() {
         </div>
 
         <div className="stack" style={{ gap: 16 }}>
-          <section className="card">
-            <div className="section-head">Email verification</div>
-            <div className="card-pad stack" style={{ gap: 10 }}>
-              <div className="row-between">
-                <span className="muted small">Status</span>
-                <span className="badge" data-kind={user?.emailVerified ? 'success' : 'warning'}>
-                  {user?.emailVerified ? 'Verified' : 'Not verified'}
-                </span>
-              </div>
-              {!user?.emailVerified && (
-                <>
-                  <p className="small muted" style={{ margin: 0 }}>
-                    Verify your email to secure password recovery. Email delivery is only enabled once the owner configures
-                    a mail provider.
-                  </p>
-                  <button type="button" className="btn btn-ghost" onClick={resend} disabled={resendBusy}>
-                    {resendBusy ? 'Sending…' : 'Send verification link'}
-                  </button>
-                  {verificationUrl && (
-                    <Link className="btn btn-primary" to={verificationUrl.replace(/^https?:\/\/[^/]+/, '')}>
-                      Open development link
-                    </Link>
-                  )}
-                </>
-              )}
-            </div>
-          </section>
-
           <section className="card card-pad stack">
             <div style={{ fontWeight: 650 }}>Signed in as</div>
             <div className="row" style={{ gap: 10 }}>
