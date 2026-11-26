@@ -158,7 +158,7 @@ type RequestOptions = {
   signal?: AbortSignal;
 };
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = 'GET', body, formData, signal } = options;
   const headers: Record<string, string> = {};
   let payload: BodyInit | undefined;
