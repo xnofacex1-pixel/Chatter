@@ -637,4 +637,137 @@ router.get(
   }),
 );
 
+/* ------------------------------------------------------- channels & content */
+
+/** Read-only channel inventory for the owner console. */
+router.get(
+  '/channels',
+  route(async (req, res) => {
+    requirePermission(req, 'manage.servers');
+    const query = String(req.query.query ?? '').trim().toLowerCase();
+    const limit = Math.min(Math.max(Number(req.query.limit) || 60, 1), 200);
+    const like = `%${query}%`;
+    const rows = db
+      .prepare(
+        `SELECT c.id, c.name, c.type, c.topic, c.is_private, c.read_only, c.slowmode_seconds, c.created_at,
+                s.id AS server_id, s.name AS server_name, s.is_suspended,
+                cat.name AS category_name,
+                (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.conversation_id AND m.deleted_at IS NULL)
+                  AS message_count
+           FROM server_channels c
+           JOIN servers s ON s.id = c.server_id
+           LEFT JOIN server_categories cat ON cat.id = c.category_id
+          WHERE (? = '' OR lower(c.name) LIKE ? OR lower(s.name) LIKE ?)
+          ORDER BY s.name COLLATE NOCASE, c.position, c.name COLLATE NOCASE
+          LIMIT ?`,
+      )
+      .all(query, like, like, limit);
+    res.json({
+      total: count('SELECT COUNT(*) AS n FROM server_channels'),
+      channels: rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        type: row.type,
+        topic: row.topic,
+        isPrivate: Boolean(row.is_private),
+        readOnly: Boolean(row.read_only),
+        slowmodeSeconds: row.slowmode_seconds,
+        createdAt: row.created_at,
+        serverId: row.server_id,
+        serverName: row.server_name,
+        serverSuspended: Boolean(row.is_suspended),
+        categoryName: row.category_name,
+        messageCount: row.message_count,
+      })),
+    });
+  }),
+);
+
+/** Recent message inventory (never exposes private content to non-staff). */
+router.get(
+  '/messages',
+  route(async (req, res) => {
+    requirePermission(req, 'moderate.messages');
+    const query = String(req.query.query ?? '').trim().toLowerCase();
+    const limit = Math.min(Math.max(Number(req.query.limit) || 60, 1), 200);
+    const like = `%${query}%`;
+    const rows = db
+      .prepare(
+        `SELECT m.id, m.body, m.created_at, m.edited_at, m.pinned_at,
+                u.id AS author_id, u.display_name AS author_name, u.username AS author_username,
+                conv.kind, conv.title,
+                sc.name AS channel_name, s.name AS server_name,
+                (SELECT COUNT(*) FROM message_attachments a WHERE a.message_id = m.id) AS attachment_count,
+                (SELECT COUNT(*) FROM message_reactions r WHERE r.message_id = m.id) AS reaction_count
+           FROM messages m
+           JOIN conversations conv ON conv.id = m.conversation_id
+           LEFT JOIN users u ON u.id = m.author_id
+           LEFT JOIN server_channels sc ON sc.conversation_id = conv.id
+           LEFT JOIN servers s ON s.id = sc.server_id
+          WHERE m.deleted_at IS NULL
+            AND (? = '' OR lower(m.body) LIKE ? OR lower(COALESCE(u.username, '')) LIKE ?)
+          ORDER BY m.created_at DESC
+          LIMIT ?`,
+      )
+      .all(query, like, like, limit);
+    res.json({
+      total: count('SELECT COUNT(*) AS n FROM messages WHERE deleted_at IS NULL'),
+      messages: rows.map((row) => ({
+        id: row.id,
+        body: row.body,
+        createdAt: row.created_at,
+        editedAt: row.edited_at,
+        pinned: Boolean(row.pinned_at),
+        authorId: row.author_id,
+        authorName: row.author_name,
+        authorUsername: row.author_username,
+        kind: row.kind,
+        title: row.title,
+        channelName: row.channel_name,
+        serverName: row.server_name,
+        attachmentCount: row.attachment_count,
+        reactionCount: row.reaction_count,
+      })),
+    });
+  }),
+);
+
+/** Platform-wide moderation history across every moderated account. */
+router.get(
+  '/moderation',
+  route(async (req, res) => {
+    requirePermission(req, 'view.audit');
+    const query = String(req.query.query ?? '').trim().toLowerCase();
+    const limit = Math.min(Math.max(Number(req.query.limit) || 60, 1), 200);
+    const like = `%${query}%`;
+    const rows = db
+      .prepare(
+        `SELECT pm.id, pm.action, pm.reason, pm.expires_at, pm.created_at,
+                a.display_name AS actor_name, a.username AS actor_username,
+                t.id AS target_id, t.display_name AS target_name, t.username AS target_username
+           FROM platform_moderation pm
+           LEFT JOIN users a ON a.id = pm.actor_id
+           LEFT JOIN users t ON t.id = pm.target_user_id
+          WHERE (? = '' OR lower(pm.action) LIKE ? OR lower(COALESCE(t.username, '')) LIKE ?)
+          ORDER BY pm.created_at DESC
+          LIMIT ?`,
+      )
+      .all(query, like, like, limit);
+    res.json({
+      entries: rows.map((row) => ({
+        id: row.id,
+        action: row.action,
+        reason: row.reason,
+        expiresAt: row.expires_at,
+        createdAt: row.created_at,
+        actorName: row.actor_name,
+        actorUsername: row.actor_username,
+        targetId: row.target_id,
+        targetName: row.target_name,
+        targetUsername: row.target_username,
+      })),
+    });
+  }),
+);
+
 export default router;
