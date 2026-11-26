@@ -95,6 +95,9 @@ export const IconSparkle = (p: IconProps) => (
 export const IconTrash = (p: IconProps) => (
   <Icon {...p}><path d="M4.4 7h15.2" /><path d="M9.4 7V5.2a1.4 1.4 0 0 1 1.4-1.4h2.4a1.4 1.4 0 0 1 1.4 1.4V7" /><path d="M6.4 7l.9 12.2a1.8 1.8 0 0 0 1.8 1.6h5.8a1.8 1.8 0 0 0 1.8-1.6L17.6 7" /></Icon>
 );
+export const IconSend = (p: IconProps) => (
+  <Icon {...p}><path d="M4.6 11.6 20 4.4l-3.6 15.2-4.5-5.1-7.3-2.9Z" /><path d="m11.9 14.5 8.1-10.1" /></Icon>
+);
 export const IconUpload = (p: IconProps) => (
   <Icon {...p}><path d="M12 16.4V4.6" /><path d="m7.4 9.2 4.6-4.6 4.6 4.6" /><path d="M4.4 15.6v2.6a2 2 0 0 0 2 2h11.2a2 2 0 0 0 2-2v-2.6" /></Icon>
 );
