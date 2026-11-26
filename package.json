@@ -1,0 +1,36 @@
+{
+  "name": "chatter",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Chatter — Your community. Your conversations. Your Chatter.",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:server": "node --watch server/index.js",
+    "dev:client": "vite client",
+    "build": "vite build client",
+    "start": "node server/index.js",
+    "typecheck": "tsc --noEmit -p client/tsconfig.json",
+    "check": "npm run typecheck && npm run build"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.4.1",
+    "express": "^4.21.2",
+    "multer": "^2.0.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.17",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.1",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.11"
+  }
+}
