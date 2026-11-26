@@ -3,10 +3,9 @@ RUN apk upgrade --no-cache
 # better-sqlite3 is a native module: Alpine needs a toolchain when no musl prebuild matches.
 RUN apk add --no-cache python3 make g++
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
 COPY . .
-# The build needs dev dependencies; they are removed before the copy below.
+# Never reuse host artifacts: node_modules can hold glibc binaries and data/ local SQLite files.
+RUN rm -rf node_modules client/dist data && npm install
 RUN npm run build && npm prune --omit=dev
 FROM node:26-alpine
 # The date keys the build cache so this layer installs today's OS fixes; AppJet keeps it current on deploy.
