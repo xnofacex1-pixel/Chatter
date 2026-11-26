@@ -80,7 +80,7 @@ async function waitForServer() {
 }
 
 const server = spawn(process.execPath, ['server/index.js'], {
-  env: { ...process.env, PORT: String(PORT), DATABASE_FILE: DB_FILE, NODE_ENV: 'test' },
+  env: { ...process.env, PORT: String(PORT), DATABASE_FILE: DB_FILE, NODE_ENV: 'test', OWNER_SETUP_CODE: 'stage5-owner-code' },
   stdio: ['ignore', 'pipe', 'pipe'],
 });
 server.stdout.on('data', (chunk) => process.stdout.write(`[server] ${chunk}`));
@@ -109,33 +109,7 @@ try {
     return res.json?.user ?? res.json;
   };
 
-  /** Verification tokens are hashed at rest, so mint one directly for the flow under test. */
-  const mintVerifyToken = (userId) => {
-    const token = randomBytes(24).toString('hex');
-    const db = new Database(DB_FILE);
-    try {
-      db.prepare(
-        `INSERT INTO auth_tokens (id, user_id, purpose, token_hash, expires_at, created_at)
-         VALUES (?, ?, 'verify', ?, ?, ?)`,
-      ).run(
-        randomUUID(),
-        userId,
-        createHash('sha256').update(token).digest('hex'),
-        new Date(Date.now() + 3600_000).toISOString(),
-        new Date().toISOString(),
-      );
-    } finally {
-      db.close();
-    }
-    return token;
-  };
-
-  const verify = async (c, userId) => {
-    const token = mintVerifyToken(userId);
-    const res = await c.req('/api/auth/verify-email', { method: 'POST', body: { token } });
-    check(res.status === 200, `verify email for ${userId.slice(0, 8)}`, `status ${res.status} ${res.text.slice(0, 140)}`);
-    return res.json?.user ?? null;
-  };
+  const claimOwner = async (c, code) => c.req('/api/auth/owner-claim', { method: 'POST', body: { code } });
 
   const ownerAccount = await register(owner, 'chatterowner', OWNER_EMAIL);
   const memberAccount = await register(member, 'stage5member', 'stage5member@example.com');
@@ -149,15 +123,18 @@ try {
 
   check(Boolean(ownerId && memberId && staffId && doomedId), 'all test accounts created');
 
-  // --- Owner promotion only happens through verified email -------------------
-  check(ownerAccount?.isOwner !== true, 'owner status is not granted before email verification');
-  const verifiedOwner = await verify(owner, ownerId);
-  check(verifiedOwner?.isOwner === true, 'verified owner email promotes the account');
-  check(verifiedOwner?.title === 'Founder & Owner', 'owner receives the Founder & Owner title', verifiedOwner?.title);
-  const verifiedMember = await verify(member, memberId);
-  check(verifiedMember?.isOwner !== true, 'ordinary verified account stays non-owner');
-  await verify(staff, staffId);
-  await verify(doomed, doomedId);
+  // --- Owner access is granted server-side through the setup code -------------
+  check(ownerAccount?.isOwner !== true, 'owner status is not granted at registration');
+  check(ownerAccount?.email === OWNER_EMAIL, 'owner account registered with the configured email');
+  const wrongCode = await claimOwner(owner, 'definitely-wrong');
+  check(wrongCode.status === 403, 'incorrect owner setup code is rejected', `status ${wrongCode.status}`);
+  const memberClaim = await claimOwner(member, 'stage5-owner-code');
+  check(memberClaim.status === 403, 'non-owner account cannot claim owner access', `status ${memberClaim.status}`);
+  const claimed = await claimOwner(owner, 'stage5-owner-code');
+  check(claimed.status === 200 && claimed.json?.user?.isOwner === true, 'owner setup code promotes the configured account', `status ${claimed.status}`);
+  check(claimed.json?.user?.title === 'Founder & Owner', 'owner receives the Founder & Owner title', claimed.json?.user?.title);
+  const memberAfterClaim = await member.req('/api/auth/session');
+  check(memberAfterClaim.json?.user?.isOwner !== true, 'ordinary account stays non-owner');
 
   const ownerSession = await owner.req('/api/auth/session');
   check(ownerSession.json?.user?.isOwner === true, 'session payload exposes the owner flag');
