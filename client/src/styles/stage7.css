@@ -1,0 +1,674 @@
+/* Stage 7 — support tickets, guided tutorial and celebration surfaces. */
+
+/* --------------------------------------------------------------------------
+   Support tickets (member-facing page)
+   -------------------------------------------------------------------------- */
+
+.support-page { max-width: 1180px; }
+
+.support-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.support-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+  margin-top: var(--space-4);
+}
+
+.support-list,
+.support-thread {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  min-width: 0;
+}
+
+.support-list {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 210px);
+  overflow: hidden;
+}
+
+.support-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.chip-count {
+  margin-left: 5px;
+  font-size: var(--fs-2xs);
+  color: var(--text-muted);
+}
+
+.ticket-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ticket-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 10px 11px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.ticket-row:hover { background: var(--bg-hover); }
+.ticket-row.is-active { background: var(--bg-active); }
+
+.ticket-row.is-unread .ticket-subject { color: var(--accent-300); }
+
+.ticket-row-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ticket-subject {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ticket-when {
+  font-size: var(--fs-2xs);
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+
+.ticket-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-2xs);
+}
+
+.ticket-preview {
+  font-size: var(--fs-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dot-unread {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-400);
+  box-shadow: 0 0 6px var(--accent-400);
+}
+
+.pill.ticket-status {
+  text-transform: none;
+  font-size: var(--fs-2xs);
+  letter-spacing: 0;
+}
+
+.ticket-status.is-open { color: var(--accent-300); border-color: rgba(var(--accent-rgb), 0.4); }
+.ticket-status.is-in_progress { color: var(--warning); border-color: rgba(242, 181, 68, 0.4); }
+.ticket-status.is-waiting_user { color: var(--text-secondary); }
+.ticket-status.is-resolved { color: #6ee7b7; border-color: rgba(110, 231, 183, 0.35); }
+.ticket-status.is-closed { color: var(--text-faint); }
+
+.pill.priority-urgent { color: var(--danger); border-color: rgba(var(--danger-rgb), 0.45); }
+.pill.priority-high { color: var(--warning); }
+.pill.pill-staff { color: var(--accent-300); border-color: rgba(var(--accent-rgb), 0.35); }
+
+.support-empty,
+.support-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: var(--space-7) var(--space-5);
+  text-align: center;
+}
+
+.support-placeholder { justify-content: center; height: 100%; min-height: 320px; }
+
+.support-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent-300);
+  font-size: 19px;
+}
+
+.support-empty p,
+.support-placeholder p { max-width: 42ch; margin: 0; }
+
+.support-thread {
+  display: flex;
+  flex-direction: column;
+  min-height: 420px;
+  max-height: calc(100dvh - 210px);
+  overflow: hidden;
+}
+
+.thread-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.thread-head h2 {
+  margin: 0 0 6px;
+  font-size: var(--fs-lg);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.thread-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: var(--fs-2xs);
+}
+
+.thread-head-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+.thread-assignee { margin: 0; padding: 6px var(--space-4); font-size: var(--fs-2xs); }
+
+.thread-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.thread-message {
+  padding: 11px 13px;
+  border-radius: var(--radius-md);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  max-width: 78%;
+}
+
+.thread-message.is-mine {
+  align-self: flex-end;
+  background: rgba(var(--accent-rgb), 0.1);
+  border-color: rgba(var(--accent-rgb), 0.22);
+}
+
+.thread-message.is-internal {
+  background: rgba(242, 181, 68, 0.08);
+  border-color: rgba(242, 181, 68, 0.3);
+  max-width: 100%;
+}
+
+.thread-message-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: var(--fs-2xs);
+  margin-bottom: 4px;
+}
+
+.thread-message-head strong { font-size: var(--fs-xs); color: var(--text-primary); }
+
+.thread-message-body {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.thread-attachment-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.thread-image img {
+  max-width: 220px;
+  max-height: 160px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  object-fit: cover;
+}
+
+.thread-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+  background: var(--bg-input);
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.thread-file:hover { border-color: var(--accent-500); color: var(--accent-300); }
+
+.thread-composer {
+  border-top: 1px solid var(--border-subtle);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.thread-composer textarea {
+  resize: vertical;
+  min-height: 62px;
+}
+
+.thread-composer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.thread-closed {
+  border-top: 1px solid var(--border-subtle);
+  padding: var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.thread-closed p { margin: 0; font-size: var(--fs-xs); }
+
+.ticket-compose {
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  overflow-y: auto;
+}
+
+.ticket-compose h2 { margin: 0; font-size: var(--fs-xl); }
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.ticket-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: var(--fs-xs);
+}
+
+.ticket-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ticket-attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
+  font-size: var(--fs-2xs);
+}
+
+.ticket-attachment-chip a { color: var(--text-secondary); text-decoration: none; }
+.ticket-attachment-chip a:hover { color: var(--accent-300); }
+
+.ticket-attachment-chip button {
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.ticket-attachment-chip button:hover { color: var(--danger); }
+
+.ticket-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: var(--space-2);
+}
+
+/* Owner console ticket management */
+
+.ticket-admin-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.ticket-admin-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  align-items: center;
+}
+
+.ticket-admin-controls input[type='search'] { flex: 1; min-width: 140px; }
+
+.ticket-admin-thread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.ticket-admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-raised);
+}
+
+.ticket-admin-toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-2xs);
+  color: var(--text-muted);
+}
+
+.ticket-internal-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+}
+
+.support-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.support-stat {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+}
+
+.support-stat span {
+  display: block;
+  font-size: var(--fs-2xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.support-stat strong { font-size: var(--fs-2xl); font-weight: 650; }
+
+/* --------------------------------------------------------------------------
+   Tutorial page
+   -------------------------------------------------------------------------- */
+
+.tutorial-page { max-width: 1040px; }
+
+.tutorial-hero {
+  position: relative;
+  overflow: hidden;
+  padding: var(--space-7) var(--space-6);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-subtle);
+  background:
+    radial-gradient(120% 140% at 12% 0%, rgba(var(--accent-rgb), 0.16), transparent 58%),
+    var(--bg-panel);
+}
+
+.tutorial-hero-glow {
+  position: absolute;
+  inset: -40% 40% 40% -20%;
+  background: radial-gradient(circle, rgba(var(--accent-rgb), 0.22), transparent 65%);
+  filter: blur(30px);
+  pointer-events: none;
+}
+
+.tutorial-eyebrow {
+  display: inline-block;
+  font-size: var(--fs-2xs);
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-300);
+}
+
+.tutorial-hero h1 {
+  margin: 8px 0 10px;
+  font-size: clamp(1.5rem, 3.4vw, 2rem);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.tutorial-lede {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--text-secondary);
+  font-size: var(--fs-md);
+  line-height: 1.6;
+}
+
+.tutorial-progress-block { margin-top: var(--space-5); max-width: 460px; }
+
+.tutorial-progress-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.tutorial-complete-note {
+  margin: 8px 0 0;
+  font-size: var(--fs-xs);
+  color: #6ee7b7;
+}
+
+.tutorial-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: var(--space-5);
+}
+
+.tutorial-save-note { margin: 10px 0 0; font-size: var(--fs-2xs); }
+
+.tutorial-lessons { margin-top: var(--space-6); }
+
+.tutorial-lessons-head h2 { margin: 0 0 2px; font-size: var(--fs-xl); }
+.tutorial-lessons-head p { margin: 0 0 var(--space-4); font-size: var(--fs-xs); }
+
+.lesson-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-3);
+  counter-reset: lesson;
+}
+
+.lesson-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.lesson-card:hover { border-color: var(--border-strong); }
+.lesson-card.is-done { border-color: rgba(var(--accent-rgb), 0.28); }
+
+.lesson-card-top { display: flex; gap: 11px; align-items: flex-start; }
+
+.lesson-number {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent-300);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+.lesson-card h3 { margin: 0 0 3px; font-size: var(--fs-sm); font-weight: 650; }
+.lesson-card p { margin: 0; font-size: var(--fs-xs); line-height: 1.5; }
+
+.lesson-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.lesson-done-label { font-size: var(--fs-2xs); color: var(--accent-300); }
+
+.tutorial-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: var(--space-6) 0;
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--bg-raised), var(--bg-panel-strong), var(--bg-raised));
+  background-size: 200% 100%;
+  animation: skeleton-sweep 1.4s ease-in-out infinite;
+}
+
+.skeleton-line.short { width: 42%; }
+
+@keyframes skeleton-sweep {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+:root[data-motion='reduced'] .skeleton-line { animation: none; }
+
+/* Settings — help & support block */
+
+.help-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-3);
+}
+
+.help-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-raised);
+}
+
+.help-card h4 { margin: 0; font-size: var(--fs-sm); }
+.help-card p { margin: 0; font-size: var(--fs-xs); color: var(--text-secondary); line-height: 1.5; }
+.help-card-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .support-grid,
+  .ticket-admin-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .support-list { max-height: 320px; }
+
+  .support-thread {
+    max-height: none;
+    min-height: 380px;
+  }
+
+  .thread-message { max-width: 92%; }
+}
+
+@media (max-width: 640px) {
+  .support-page,
+  .tutorial-page { padding: var(--space-4) var(--space-3) var(--space-6); }
+
+  .tutorial-hero { padding: var(--space-5) var(--space-4); }
+
+  .lesson-grid { grid-template-columns: minmax(0, 1fr); }
+
+  .field-row { grid-template-columns: minmax(0, 1fr); }
+
+  .thread-head { flex-direction: column; }
+  .thread-head-actions { width: 100%; }
+  .thread-head-actions .btn { flex: 1; }
+
+  .thread-message { max-width: 100%; }
+
+  .thread-composer-actions .btn { flex: 1; }
+
+  .tabbar-item span { font-size: var(--fs-2xs); }
+  .tabbar-item svg { width: 19px; height: 19px; }
+}
