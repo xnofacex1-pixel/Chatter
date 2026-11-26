@@ -239,20 +239,10 @@ export const api = {
 
   session: () => request<{ user: User | null; settings: Settings | null }>('/api/auth/session'),
   register: (input: { email: string; username: string; displayName?: string; password: string }) =>
-    request<{ user: User; settings: Settings; verification: { emailSent: boolean; emailConfigured: boolean; verificationUrl?: string } }>(
-      '/api/auth/register',
-      { method: 'POST', body: input },
-    ),
+    request<{ user: User; settings: Settings }>('/api/auth/register', { method: 'POST', body: input }),
   login: (input: { identifier: string; password: string }) =>
     request<{ user: User; settings: Settings }>('/api/auth/login', { method: 'POST', body: input }),
   logout: () => request<{ ok: boolean }>('/api/auth/logout', { method: 'POST' }),
-  verifyEmail: (token: string) =>
-    request<{ ok: boolean; user: User; settings: Settings }>('/api/auth/verify-email', { method: 'POST', body: { token } }),
-  resendVerification: () =>
-    request<{ ok: boolean; alreadyVerified: boolean; emailSent: boolean; emailConfigured: boolean; verificationUrl?: string }>(
-      '/api/auth/resend-verification',
-      { method: 'POST' },
-    ),
   forgotPassword: (email: string) =>
     request<{ ok: boolean; emailSent: boolean; emailConfigured: boolean; resetUrl?: string }>('/api/auth/forgot-password', {
       method: 'POST',

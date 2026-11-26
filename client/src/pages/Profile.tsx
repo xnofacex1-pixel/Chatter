@@ -134,7 +134,7 @@ export default function Profile() {
                 {user.pronouns ? ` · ${user.pronouns}` : ''} · {presenceLabel(user.presence)}
               </div>
               <div className="tiny muted" style={{ marginTop: 4 }}>
-                Member since {formatDate(user.createdAt)} · {user.emailVerified ? 'Email verified' : 'Email not verified'}
+                Member since {formatDate(user.createdAt)}
               </div>
             </div>
             {user.avatarUrl && (

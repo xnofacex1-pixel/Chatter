@@ -80,7 +80,7 @@ export default function Register() {
             placeholder="you@example.com"
             aria-invalid={Boolean(fields.email)}
           />
-          {fields.email ? <div className="field-error">{fields.email}</div> : <div className="field-hint">Used to verify your account and recover it.</div>}
+          {fields.email ? <div className="field-error">{fields.email}</div> : <div className="field-hint">Used to sign in and recover your account.</div>}
         </div>
         <div className="field">
           <label className="field-label" htmlFor="username">

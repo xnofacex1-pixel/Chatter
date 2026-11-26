@@ -7,10 +7,7 @@ type AuthContextValue = {
   loading: boolean;
   authenticated: boolean;
   login: (identifier: string, password: string) => Promise<void>;
-  register: (input: { email: string; username: string; displayName?: string; password: string }) => Promise<{
-    verificationUrl?: string;
-    emailSent: boolean;
-  }>;
+  register: (input: { email: string; username: string; displayName?: string; password: string }) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: User) => void;
   setSettings: (settings: Settings) => void;
@@ -137,7 +134,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await api.register(input);
       setUser(data.user);
       setSettings(data.settings);
-      return { verificationUrl: data.verification.verificationUrl, emailSent: data.verification.emailSent };
     },
     [setSettings],
   );

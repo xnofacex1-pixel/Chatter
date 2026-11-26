@@ -124,12 +124,6 @@ export default function ProfileView() {
                     <span>{formatDate(user.createdAt)}</span>
                   </div>
                   <div className="divider" />
-                  <div className="row-between">
-                    <span className="muted small">Account</span>
-                    <span className="badge" data-kind={user.emailVerified ? 'success' : 'warning'}>
-                      {user.emailVerified ? 'Verified' : 'Unverified'}
-                    </span>
-                  </div>
                   {user.title && (
                     <>
                       <div className="divider" />

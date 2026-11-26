@@ -10,7 +10,6 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
-import VerifyEmail from './pages/VerifyEmail';
 import Home from './pages/Home';
 import Ai from './pages/Ai';
 import Friends from './pages/Friends';
@@ -87,7 +86,6 @@ export default function App() {
               <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
               <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
               <Route path="/reset-password" element={<GuestRoute><ResetPassword /></GuestRoute>} />
-              <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
               <Route path="/members" element={<Navigate to="/friends" replace />} />
               <Route path="/ai" element={<ProtectedRoute><Ai /></ProtectedRoute>} />
