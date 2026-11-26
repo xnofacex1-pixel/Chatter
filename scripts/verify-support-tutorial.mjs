@@ -106,6 +106,7 @@ try {
   const other = client();
   const owner = client();
   const anonymous = client();
+  const reloginClient = client();
 
   const register = async (c, username, email) => {
     const res = await c.req('/api/auth/register', {
@@ -132,7 +133,7 @@ try {
   );
   check(!memberMe.json?.user?.verificationRequired, 'no verification-required flag on the session');
 
-  const relogin = await anonymous.req('/api/auth/login', {
+  const relogin = await reloginClient.req('/api/auth/login', {
     method: 'POST',
     body: { identifier: 'ticketmember@example.com', password: PASSWORD },
   });
