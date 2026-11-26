@@ -118,7 +118,6 @@ const PANEL_FOR: Record<Section, Panel> = {
   'admin-actions': 'audit',
 };
 
-const STAFF_SECTIONS: Section[] = ['administrators', 'moderators', 'support'];
 const ROLE_FOR_SECTION: Partial<Record<Section, StaffRole>> = {
   administrators: 'administrator',
   moderators: 'moderator',
@@ -148,7 +147,7 @@ const navGroups: { label: string; items: { id: Section; label: string; icon: typ
     label: 'Staff',
     items: [
       { id: 'administrators', label: 'Administrators', icon: IconShield },
-      { id: 'moderators', label: 'Moderators', icon: IconUser },
+      { id: 'moderators', label: 'Moderators', icon: IconUsers },
       { id: 'support', label: 'Support staff', icon: IconHeadphones },
       { id: 'permissions', label: 'Staff permissions', icon: IconLock },
     ],
@@ -158,7 +157,7 @@ const navGroups: { label: string; items: { id: Section; label: string; icon: typ
     items: [
       { id: 'announcements', label: 'Announcements', icon: IconBell },
       { id: 'notifications', label: 'Notifications', icon: IconMail },
-      { id: 'registration', label: 'Registration', icon: IconUser },
+      { id: 'registration', label: 'Registration', icon: IconCheck },
       { id: 'maintenance', label: 'Maintenance mode', icon: IconWarning },
       { id: 'application', label: 'Application settings', icon: IconSettings },
       { id: 'uploads', label: 'Upload limits', icon: IconUpload },
@@ -466,7 +465,7 @@ export default function OwnerConsole() {
     ? staff.filter((entry) => entry.role === ROLE_FOR_SECTION[section])
     : staff;
   const auditVisible =
-    section === 'security-events'
+    section === 'security'
       ? audit.filter((entry) => /login|password|session|owner|verify|blocked/.test(entry.action))
       : section === 'admin-actions'
         ? audit.filter((entry) => entry.action.startsWith('admin.'))
