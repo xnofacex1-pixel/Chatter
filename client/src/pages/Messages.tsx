@@ -1095,14 +1095,13 @@ function ConversationRow({
 }) {
   const title = conversationTitle(conversation, meId);
   const partner = conversation.partner;
+  const navigate = useNavigate();
   return (
     <button
       type="button"
       className="convo-row"
       data-active={active}
-      onClick={() => {
-        window.location.assign(`/messages/${conversation.id}`);
-      }}
+      onClick={() => navigate(`/messages/${conversation.id}`)}
     >
       {partner ? (
         <Avatar user={partner} size="sm" showPresence />
