@@ -508,7 +508,7 @@ function UserPanel({
 export function DefaultSidebar({
   active,
 }: {
-  active: 'home' | 'messages' | 'friends' | 'profile' | 'settings' | 'owner' | 'ai';
+  active: 'home' | 'messages' | 'friends' | 'profile' | 'settings' | 'owner' | 'ai' | 'support' | 'tutorial';
 }) {
   const { user } = useAuth();
   const [unread, setUnread] = useState(0);
