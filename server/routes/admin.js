@@ -18,7 +18,7 @@ import {
   staffPermissions,
 } from '../lib/admin.js';
 
-const router = Router();
+export const router = Router();
 router.use(requireUser);
 
 const ONLINE_WINDOW_MS = 5 * 60 * 1000;
