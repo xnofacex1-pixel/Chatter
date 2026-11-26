@@ -10,6 +10,7 @@ export const STAFF_PERMISSIONS = [
   'manage.servers',
   'view.reports',
   'view.audit',
+  'support.tickets',
 ];
 
 export const STAFF_ROLE_LABELS = {

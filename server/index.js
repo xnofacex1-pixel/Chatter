@@ -176,7 +176,7 @@ app.use((error, req, res, _next) => {
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`[chatter] listening on http://0.0.0.0:${PORT} (${isProduction ? 'production' : 'development'})`);
   if (!process.env.RESEND_API_KEY) {
-    console.warn('[chatter] RESEND_API_KEY is not set — verification and reset emails will not be delivered.');
+    console.warn('[chatter] RESEND_API_KEY is not set — password reset emails will not be delivered. Registration and sign-in do not need it.');
   }
 });
 
