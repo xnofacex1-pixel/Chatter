@@ -175,7 +175,7 @@ try {
 
   const dm = await alice.req('/api/conversations', {
     method: 'POST',
-    body: { kind: 'dm', userId: bobId },
+    body: { kind: 'dm', userIds: [bobId] },
   });
   const conversationId = dm.json?.conversation?.id;
   check(Boolean(conversationId), 'direct conversation created', `status ${dm.status} ${dm.text.slice(0, 120)}`);
