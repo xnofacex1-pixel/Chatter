@@ -61,6 +61,7 @@ export default function Servers() {
   const [error, setError] = useState<string | null>(null);
   const [event, setEvent] = useState<ChatEvent | null>(null);
   const [modal, setModal] = useState<ModalKind>(null);
+  const [dragChannelId, setDragChannelId] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [discoverQuery, setDiscoverQuery] = useState('');
   const [discoveries, setDiscoveries] = useState<ServerSummary[]>([]);
