@@ -18,6 +18,7 @@ import { router as callsRouter } from './routes/calls.js';
 import { router as adminRouter } from './routes/admin.js';
 import { router as notificationsRouter } from './routes/notifications.js';
 import { router as aiRouter } from './routes/ai.js';
+import { router as supportRouter } from './routes/support.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -112,6 +113,7 @@ app.use('/api/calls', callsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/ai', aiRouter);
+app.use('/api/support', supportRouter);
 
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: { code: 'not_found', message: 'That endpoint does not exist.' } });
