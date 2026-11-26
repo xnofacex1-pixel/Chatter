@@ -346,3 +346,84 @@ router.delete(
     res.json({ ok: true });
   }),
 );
+
+// --- Tutorial progress -------------------------------------------------------
+
+const TUTORIAL_LESSON_IDS = [
+  'dashboard',
+  'profile',
+  'friends',
+  'messages',
+  'servers',
+  'channels',
+  'voice',
+  'notifications',
+  'ai',
+  'support',
+  'safety',
+];
+
+function tutorialProgress(row) {
+  let completedLessons = [];
+  if (row?.completed_lessons) {
+    try {
+      const parsed = JSON.parse(row.completed_lessons);
+      if (Array.isArray(parsed)) completedLessons = parsed.filter((id) => TUTORIAL_LESSON_IDS.includes(id));
+    } catch {
+      completedLessons = [];
+    }
+  }
+  return {
+    completedLessons,
+    lastLesson: row?.last_lesson ?? null,
+    completedAt: row?.completed_at ?? null,
+    completed: Boolean(row?.completed_at),
+    totalLessons: TUTORIAL_LESSON_IDS.length,
+  };
+}
+
+router.get(
+  '/tutorial',
+  route(async (req, res) => {
+    const row = db.prepare('SELECT * FROM user_tutorial_progress WHERE user_id = ?').get(req.user.id);
+    res.json({ progress: tutorialProgress(row) });
+  }),
+);
+
+const tutorialSchema = z.object({
+  completedLessons: z.array(z.string().max(40)).max(40).optional(),
+  lastLesson: z.string().max(40).nullable().optional(),
+  completed: z.boolean().optional(),
+});
+
+router.patch(
+  '/tutorial',
+  route(async (req, res) => {
+    const parsed = tutorialSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return fail(400, 'invalid_input', 'Check the tutorial progress payload.');
+    const row = db.prepare('SELECT * FROM user_tutorial_progress WHERE user_id = ?').get(req.user.id);
+    const current = tutorialProgress(row);
+    const next = {
+      completedLessons: parsed.data.completedLessons
+        ? [...new Set(parsed.data.completedLessons.filter((id) => TUTORIAL_LESSON_IDS.includes(id)))]
+        : current.completedLessons,
+      lastLesson: parsed.data.lastLesson === undefined ? current.lastLesson : parsed.data.lastLesson,
+      completedAt: parsed.data.completed
+        ? (current.completedAt || nowIso())
+        : parsed.data.completed === false
+          ? null
+          : current.completedAt,
+    };
+    const now = nowIso();
+    db.prepare(
+      `INSERT INTO user_tutorial_progress (user_id, completed_lessons, last_lesson, completed_at, updated_at)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET
+         completed_lessons = excluded.completed_lessons,
+         last_lesson = excluded.last_lesson,
+         completed_at = excluded.completed_at,
+         updated_at = excluded.updated_at`,
+    ).run(req.user.id, JSON.stringify(next.completedLessons), next.lastLesson, next.completedAt, now);
+    res.json({ progress: tutorialProgress({ completed_lessons: JSON.stringify(next.completedLessons), last_lesson: next.lastLesson, completed_at: next.completedAt }) });
+  }),
+);
