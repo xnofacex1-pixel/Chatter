@@ -8,6 +8,10 @@ import { router as authRouter } from './routes/auth.js';
 import { router as meRouter } from './routes/me.js';
 import { router as usersRouter, statsRouter } from './routes/users.js';
 import { router as mediaRouter } from './routes/media.js';
+import { router as friendsRouter } from './routes/friends.js';
+import { router as conversationsRouter, messagesRouter } from './routes/conversations.js';
+import { router as attachmentsRouter } from './routes/attachments.js';
+import { router as realtimeRouter } from './routes/realtime.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -89,6 +93,11 @@ app.use('/api/me', meRouter);
 app.use('/api/users', usersRouter);
 app.use('/api', statsRouter);
 app.use('/api/media', mediaRouter);
+app.use('/api/friends', friendsRouter);
+app.use('/api/conversations', conversationsRouter);
+app.use('/api/messages', messagesRouter);
+app.use('/api/attachments', attachmentsRouter);
+app.use('/api/realtime', realtimeRouter);
 
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: { code: 'not_found', message: 'That endpoint does not exist.' } });
