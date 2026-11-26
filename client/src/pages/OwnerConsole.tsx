@@ -107,6 +107,7 @@ const PANEL_FOR: Record<Section, Panel> = {
   channels: 'channels',
   messages: 'messages',
   reports: 'reports',
+  'support-tickets': 'support-tickets',
   administrators: 'staff',
   moderators: 'staff',
   support: 'staff',

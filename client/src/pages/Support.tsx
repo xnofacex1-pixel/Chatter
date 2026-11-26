@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppShell } from '../components/AppShell';
+import { AppShell, DefaultSidebar } from '../components/AppShell';
 import { useAuth } from '../lib/auth';
 import {
   attachmentUrl,
@@ -222,7 +222,11 @@ export default function Support() {
   const canReply = activeTicket ? activeTicket.status !== 'closed' : false;
 
   return (
-    <AppShell>
+    <AppShell
+      title="Support"
+      subtitle="Tickets, replies and help from the Chatter team"
+      sidebar={<DefaultSidebar active="support" />}
+    >
       <div className="page support-page" data-tour="support-page">
         <header className="page-head support-head">
           <div>
