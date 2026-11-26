@@ -6,6 +6,7 @@ import { clientIp, fail, route } from '../lib/http.js';
 import { publicUser } from '../lib/presenters.js';
 import { rateLimit } from '../lib/rate-limit.js';
 import { publish } from '../lib/realtime.js';
+import { notify } from '../lib/notifications.js';
 import { audit } from '../lib/sessions.js';
 import {
   areFriends,
@@ -111,6 +112,12 @@ router.post(
         db.prepare('INSERT OR IGNORE INTO friendships (user_a_id, user_b_id, created_at) VALUES (?, ?, ?)').run(a, b, now);
       })();
       publish([target.id, req.user.id], 'friend:update', { reason: 'accepted' });
+      notify(target.id, {
+        type: 'friend_accepted',
+        title: `${req.user.display_name || req.user.username} accepted your friend request`,
+        link: '/friends',
+        actorId: req.user.id,
+      });
       return res.status(201).json({
         autoAccepted: true,
         friend: publicUser(userRow(target.id)),
@@ -142,6 +149,13 @@ router.post(
     const row = db.prepare('SELECT * FROM friend_requests WHERE id = ?').get(id);
     publish(target.id, 'friend:update', { reason: 'incoming' });
     publish(req.user.id, 'friend:update', { reason: 'sent' });
+    notify(target.id, {
+      type: 'friend_request',
+      title: `${req.user.display_name || req.user.username} sent you a friend request`,
+      body: message || null,
+      link: '/friends',
+      actorId: req.user.id,
+    });
     res.status(201).json({ request: requestView(row, req.user.id) });
   }),
 );
@@ -162,6 +176,12 @@ router.post(
     })();
     audit(req.user.id, 'friend.request_accepted', { targetType: 'user', targetId: row.from_user_id, ip: clientIp(req) });
     publish([row.from_user_id, req.user.id], 'friend:update', { reason: 'accepted' });
+    notify(row.from_user_id, {
+      type: 'friend_accepted',
+      title: `${req.user.display_name || req.user.username} accepted your friend request`,
+      link: '/friends',
+      actorId: req.user.id,
+    });
     res.json({ ok: true, friend: publicUser(userRow(row.from_user_id)) });
   }),
 );

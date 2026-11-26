@@ -107,6 +107,45 @@ export function unreadCount(userId) {
   return row?.total ?? 0;
 }
 
+/**
+ * Fan out a direct or group message to every other member of the conversation,
+ * upgrading to a mention when the body names them. Muted conversations and the
+ * member's own notification preferences are respected by notify().
+ */
+export function notifyConversationMessage({ conversationId, authorId, messageId, body }) {
+  const conversation = db.prepare('SELECT * FROM conversations WHERE id = ?').get(conversationId);
+  if (!conversation) return [];
+  const author = db.prepare('SELECT * FROM users WHERE id = ?').get(authorId);
+  const authorName = author?.display_name || author?.username || 'Someone';
+  const members = db
+    .prepare(
+      `SELECT u.id, u.username, m.muted
+         FROM conversation_members m JOIN users u ON u.id = m.user_id
+        WHERE m.conversation_id = ? AND m.user_id != ?`,
+    )
+    .all(conversationId, authorId);
+
+  const isDirect = conversation.kind === 'direct';
+  const created = [];
+  for (const member of members) {
+    if (member.muted) continue;
+    const mentioned = Boolean(body) && new RegExp(`@${member.username}\\b`, 'i').test(body);
+    const view = notify(member.id, {
+      type: mentioned ? 'mention' : 'message',
+      title: isDirect
+        ? `${authorName} sent you a message`
+        : `${authorName} in ${conversation.title || 'Group chat'}`,
+      body: body ? body.slice(0, 160) : 'Sent an attachment',
+      link: `/messages/${conversationId}`,
+      actorId: authorId,
+      conversationId,
+      messageId,
+    });
+    if (view) created.push(view);
+  }
+  return created;
+}
+
 export function actorsFor(rows) {
   const ids = [...new Set(rows.map((row) => row.actor_id).filter(Boolean))];
   const actors = new Map();
