@@ -84,6 +84,15 @@ type Section =
   | 'security'
   | 'admin-actions';
 
+const PLATFORM_TITLE: Record<string, string> = {
+  announcements: 'Announcements',
+  notifications: 'Notification delivery',
+  registration: 'Registration settings',
+  maintenance: 'Maintenance mode',
+  application: 'Application settings',
+  uploads: 'Upload limits',
+};
+
 const PANEL_FOR: Record<Section, Panel> = {
   dashboard: 'overview',
   activity: 'overview',
@@ -1209,6 +1218,314 @@ export default function OwnerConsole() {
               </table>
               {auditVisible.length === 0 && <div className="owner-empty">No audit entries recorded yet.</div>}
             </div>
+          </div>
+        )}
+
+        {section === 'activity' && (
+          <div className="owner-panel">
+            <h3>Recent activity</h3>
+            {overviewError && <div className="call-error-inline" role="alert"><IconWarning size={15} /> {overviewError}</div>}
+            <div className="owner-list">
+              {(overview?.recentActivity ?? []).map((entry) => (
+                <div key={entry.id} className="owner-list-row">
+                  <span className="owner-audit-action">{entry.action}</span>
+                  <span className="muted">{entry.actor_name ?? entry.actor_username ?? 'System'}</span>
+                  <span className="muted">
+                    {entry.target_type ? `${entry.target_type} ${entry.target_id ?? ''}` : '—'}
+                  </span>
+                  <span className="muted push-end">{formatWhen(entry.created_at)}</span>
+                </div>
+              ))}
+              {(overview?.recentActivity ?? []).length === 0 && (
+                <div className="owner-empty">No activity recorded yet.</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {section === 'health' && (
+          <div className="owner-panel">
+            <h3>System health</h3>
+            {overviewError && <div className="call-error-inline" role="alert"><IconWarning size={15} /> {overviewError}</div>}
+            {overview && (
+              <>
+                <div className="owner-health">
+                  <div className="owner-health-item">
+                    <span className="muted">Status</span>
+                    <strong className="owner-pill good">{overview.health.status}</strong>
+                  </div>
+                  <div className="owner-health-item">
+                    <span className="muted">Uptime</span>
+                    <strong>{formatUptime(overview.health.uptimeSeconds)}</strong>
+                  </div>
+                  <div className="owner-health-item">
+                    <span className="muted">Memory</span>
+                    <strong>{overview.health.memoryMb} MB</strong>
+                  </div>
+                  <div className="owner-health-item">
+                    <span className="muted">Node</span>
+                    <strong>{overview.health.node}</strong>
+                  </div>
+                  <div className="owner-health-item">
+                    <span className="muted">Database</span>
+                    <strong>{overview.health.database}</strong>
+                  </div>
+                </div>
+                <p className="owner-settings-note">
+                  Sampled {formatWhen(overview.health.checkedAt)} · {overview.stats.onlineUsers.toLocaleString()} online ·{' '}
+                  {overview.stats.activeCalls.toLocaleString()} active calls
+                </p>
+              </>
+            )}
+          </div>
+        )}
+
+        {tab === 'channels' && (
+          <div className="owner-panel">
+            <div className="owner-toolbar">
+              <input
+                type="search"
+                className="input"
+                placeholder="Search channels or communities"
+                value={channelQuery}
+                onChange={(event) => setChannelQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') void loadChannels(channelQuery);
+                }}
+              />
+              <button type="button" className="btn btn-primary btn-sm" onClick={() => void loadChannels(channelQuery)}>
+                <IconSearch size={15} /> Search
+              </button>
+              <span className="muted push-end">{channelsTotal.toLocaleString()} channels</span>
+            </div>
+            {channelsError && <div className="call-error-inline" role="alert"><IconWarning size={15} /> {channelsError}</div>}
+            <div className="owner-table-wrap">
+              <table className="owner-table">
+                <thead>
+                  <tr>
+                    <th>Channel</th>
+                    <th>Community</th>
+                    <th>Category</th>
+                    <th>Access</th>
+                    <th>Messages</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {channels.map((channel) => (
+                    <tr key={channel.id}>
+                      <td>
+                        <div className="owner-channel-cell">
+                          {channel.type === 'voice' ? <IconHeadphones size={15} /> : <IconMessage size={15} />}
+                          <div>
+                            <strong>{channel.name}</strong>
+                            <span>{channel.topic || channel.type}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        {channel.serverName}
+                        {channel.serverSuspended && <span className="owner-pill warn">Suspended</span>}
+                      </td>
+                      <td className="muted">{channel.categoryName ?? '—'}</td>
+                      <td className="muted">
+                        {channel.isPrivate ? 'Private' : 'Open'}
+                        {channel.readOnly ? ' · Read-only' : ''}
+                        {channel.slowmodeSeconds > 0 ? ` · ${channel.slowmodeSeconds}s slow mode` : ''}
+                      </td>
+                      <td className="muted">{channel.messageCount.toLocaleString()}</td>
+                      <td className="muted">{formatWhen(channel.createdAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {channels.length === 0 && <div className="owner-empty">No channels match that search.</div>}
+            </div>
+          </div>
+        )}
+
+        {tab === 'messages' && (
+          <div className="owner-panel">
+            <div className="owner-toolbar">
+              <input
+                type="search"
+                className="input"
+                placeholder="Search message text or author"
+                value={messageQuery}
+                onChange={(event) => setMessageQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') void loadMessages(messageQuery);
+                }}
+              />
+              <button type="button" className="btn btn-primary btn-sm" onClick={() => void loadMessages(messageQuery)}>
+                <IconSearch size={15} /> Search
+              </button>
+              <span className="muted push-end">{messagesTotal.toLocaleString()} messages</span>
+            </div>
+            {messagesError && <div className="call-error-inline" role="alert"><IconWarning size={15} /> {messagesError}</div>}
+            <div className="owner-table-wrap">
+              <table className="owner-table">
+                <thead>
+                  <tr>
+                    <th>Message</th>
+                    <th>Author</th>
+                    <th>Location</th>
+                    <th>Flags</th>
+                    <th>Sent</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {messages.map((message) => (
+                    <tr key={message.id}>
+                      <td className="owner-message-cell">{message.body.slice(0, 140) || '(attachment only)'}</td>
+                      <td>{message.authorName ?? message.authorUsername ?? 'Deleted user'}</td>
+                      <td className="muted">
+                        {message.serverName && message.channelName
+                          ? `${message.serverName} · #${message.channelName}`
+                          : message.kind === 'group'
+                            ? message.title ?? 'Group conversation'
+                            : 'Direct message'}
+                      </td>
+                      <td className="muted">
+                        {message.pinned ? 'Pinned' : '—'}
+                        {message.editedAt ? ' · Edited' : ''}
+                        {message.attachmentCount > 0 ? ` · ${message.attachmentCount} files` : ''}
+                      </td>
+                      <td className="muted">{formatWhen(message.createdAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {messages.length === 0 && <div className="owner-empty">No messages match that search.</div>}
+            </div>
+            <p className="owner-settings-note">
+              Message bodies are shown for platform safety review only. Private conversations stay private between their
+              members; every access here is recorded in the audit log.
+            </p>
+          </div>
+        )}
+
+        {tab === 'moderation' && (
+          <div className="owner-panel">
+            <div className="owner-toolbar">
+              <input
+                type="search"
+                className="input"
+                placeholder="Search actions or members"
+                value={moderationQuery}
+                onChange={(event) => setModerationQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') void loadModeration(moderationQuery);
+                }}
+              />
+              <button type="button" className="btn btn-primary btn-sm" onClick={() => void loadModeration(moderationQuery)}>
+                <IconSearch size={15} /> Search
+              </button>
+            </div>
+            {moderationError && <div className="call-error-inline" role="alert"><IconWarning size={15} /> {moderationError}</div>}
+            <div className="owner-table-wrap">
+              <table className="owner-table">
+                <thead>
+                  <tr>
+                    <th>Action</th>
+                    <th>Member</th>
+                    <th>Moderator</th>
+                    <th>Reason</th>
+                    <th>Expires</th>
+                    <th>When</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {moderation.map((entry) => (
+                    <tr key={entry.id}>
+                      <td><span className="owner-pill warn">{entry.action}</span></td>
+                      <td>{entry.targetName ?? entry.targetUsername ?? '—'}</td>
+                      <td className="muted">{entry.actorName ?? entry.actorUsername ?? 'System'}</td>
+                      <td className="muted">{entry.reason ?? '—'}</td>
+                      <td className="muted">{entry.expiresAt ? formatWhen(entry.expiresAt) : 'Permanent'}</td>
+                      <td className="muted">{formatWhen(entry.createdAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {moderation.length === 0 && <div className="owner-empty">No moderation history recorded yet.</div>}
+            </div>
+          </div>
+        )}
+
+        {section === 'permissions' && (
+          <div className="owner-panel">
+            <h3>Permission coverage</h3>
+            <div className="owner-table-wrap">
+              <table className="owner-table">
+                <thead>
+                  <tr>
+                    <th>Permission</th>
+                    <th>Administrators</th>
+                    <th>Moderators</th>
+                    <th>Support</th>
+                    <th>Holders</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(Object.keys(PERMISSION_LABELS) as StaffPermission[]).map((permission) => {
+                    const admins = staff.filter((entry) => entry.role === 'administrator');
+                    const moderators = staff.filter(
+                      (entry) => entry.role === 'moderator' && entry.permissions.includes(permission),
+                    );
+                    const support = staff.filter(
+                      (entry) => entry.role === 'support' && entry.permissions.includes(permission),
+                    );
+                    return (
+                      <tr key={permission}>
+                        <td>
+                          <strong>{PERMISSION_LABELS[permission]}</strong>
+                          <span className="owner-perm-key">{permission}</span>
+                        </td>
+                        <td className="muted">{admins.length}</td>
+                        <td className="muted">{moderators.length}</td>
+                        <td className="muted">{support.length}</td>
+                        <td className="muted">{admins.length + moderators.length + support.length}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <p className="owner-settings-note">
+              Administrators automatically hold every permission. Only the verified owner can grant or revoke
+              administrator access, and the server re-checks each permission on every request.
+            </p>
+          </div>
+        )}
+
+        {section === 'notifications' && (
+          <div className="owner-panel">
+            <h3>Notification delivery</h3>
+            <div className="owner-health">
+              <div className="owner-health-item">
+                <span className="muted">Email delivery</span>
+                <strong className={emailConfigured ? 'owner-pill good' : 'owner-pill warn'}>
+                  {emailConfigured === null ? 'Unknown' : emailConfigured ? 'Configured' : 'Not configured'}
+                </strong>
+              </div>
+              <div className="owner-health-item">
+                <span className="muted">In-app notifications</span>
+                <strong className="owner-pill good">Active</strong>
+              </div>
+              <div className="owner-health-item">
+                <span className="muted">Browser push</span>
+                <strong>{typeof Notification === 'undefined' ? 'Unsupported' : Notification.permission}</strong>
+              </div>
+              <div className="owner-health-item">
+                <span className="muted">Moderation alerts</span>
+                <strong>{settingsDraft?.moderationEnabled ? 'Enabled' : 'Disabled'}</strong>
+              </div>
+            </div>
+            <p className="owner-settings-note">
+              Verification and password-reset emails need a mail provider key on the server. Without it, accounts can
+              still be created and members can read notification centre items inside Chatter.
+            </p>
           </div>
         )}
 
