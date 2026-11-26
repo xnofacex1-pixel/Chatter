@@ -480,21 +480,6 @@ export default function OwnerConsole() {
           ? 'Support staff'
           : 'Current staff';
 
-    return (
-      <AppShell title="Owner console" subtitle="Restricted area">
-        <div className="owner-denied">
-          <div className="empty-icon"><IconLock size={26} /></div>
-          <h2>This area is reserved for the Chatter owner</h2>
-          <p className="muted">
-            Your account does not hold platform owner permissions. Every owner endpoint re-checks this on the server, so the
-            console cannot be reached by editing anything in the browser.
-          </p>
-          <Link className="btn btn-primary" to="/">Back to Chatter</Link>
-        </div>
-      </AppShell>
-    );
-  }
-
   return (
     <AppShell
       title="Owner console"
