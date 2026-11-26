@@ -23,10 +23,12 @@ import { join } from 'node:path';
 const PORT = Number(process.env.CHECK_PORT || 4617);
 const BASE = `http://127.0.0.1:${PORT}`;
 const DB_FILE = join(tmpdir(), `chatter-stage7-${process.pid}.db`);
+const DATA_DIR = join(tmpdir(), `chatter-stage7-data-${process.pid}`);
 const PASSWORD = 'ChatterTest!2026';
 const STAMP = randomBytes(3).toString('hex');
 
 for (const suffix of ['', '-wal', '-shm']) rmSync(`${DB_FILE}${suffix}`, { force: true });
+rmSync(DATA_DIR, { recursive: true, force: true });
 
 let failures = 0;
 function check(condition, label, detail = '') {
@@ -115,7 +117,7 @@ async function signUp(c, username) {
 
 const server = spawn(process.execPath, ['server/index.js'], {
   cwd: new URL('..', import.meta.url).pathname,
-  env: { ...process.env, PORT: String(PORT), DATABASE_FILE: DB_FILE, NODE_ENV: 'development' },
+  env: { ...process.env, PORT: String(PORT), DATABASE_FILE: DB_FILE, DATA_DIR, NODE_ENV: 'development' },
   stdio: ['ignore', 'pipe', 'pipe'],
 });
 server.stdout.on('data', (chunk) => process.stdout.write(`[server] ${chunk}`));
@@ -269,6 +271,7 @@ try {
   server.kill('SIGTERM');
   await sleep(200);
   for (const suffix of ['', '-wal', '-shm']) rmSync(`${DB_FILE}${suffix}`, { force: true });
+  rmSync(DATA_DIR, { recursive: true, force: true });
 }
 
 process.exit(exitCode);
