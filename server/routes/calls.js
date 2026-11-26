@@ -4,6 +4,7 @@ import { fail, route } from '../lib/http.js';
 import { rateLimit } from '../lib/rate-limit.js';
 import { requireUser } from './me.js';
 import { publish, memberIds } from '../lib/realtime.js';
+import { notify } from '../lib/notifications.js';
 import { canDirectMessage, requireConversation, requireMembership } from '../lib/social.js';
 import { channelPermissions, has, P, requireServerMember } from '../lib/server-perms.js';
 import {
@@ -16,6 +17,7 @@ import {
   endIfEmpty,
   findLiveCall,
   joinedUserIds,
+  participantRows,
   requireParticipant,
   serializeCall,
   setParticipantState,
@@ -172,6 +174,22 @@ router.post(
     setParticipantState(call.id, req.user.id, 'declined');
     const updated = endIfEmpty(callRow(call.id), 'declined');
     broadcastCall(updated);
+
+    // A declined ring that nobody joined is a missed call for the caller.
+    if (updated.ended_at) {
+      const decliner = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
+      const name = decliner?.display_name || decliner?.username || 'Someone';
+      for (const participant of participantRows(call.id)) {
+        if (participant.user_id === req.user.id) continue;
+        notify(participant.user_id, {
+          type: 'call_missed',
+          title: `Missed ${updated.kind} call from ${name}`,
+          body: 'The call ended before it was answered.',
+          link: '/messages',
+          actorId: req.user.id,
+        });
+      }
+    }
     res.json({ call: serializeCall(updated, req.user.id) });
   }),
 );

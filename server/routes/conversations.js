@@ -6,6 +6,7 @@ import { clientIp, fail, route } from '../lib/http.js';
 import { publicUser } from '../lib/presenters.js';
 import { rateLimit } from '../lib/rate-limit.js';
 import { memberIds, publish, publishToConversation } from '../lib/realtime.js';
+import { notifyConversationMessage } from '../lib/notifications.js';
 import { audit } from '../lib/sessions.js';
 import {
   canDirectMessage,
@@ -425,6 +426,12 @@ router.post(
 
     const row = db.prepare('SELECT * FROM messages WHERE id = ?').get(id);
     publishMessage(req.params.id, 'message:new', row);
+    notifyConversationMessage({
+      conversationId: req.params.id,
+      authorId: req.user.id,
+      messageId: row.id,
+      body,
+    });
     res.status(201).json({ message: messageFor(row, req.user.id) });
   }),
 );
