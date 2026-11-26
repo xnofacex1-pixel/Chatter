@@ -283,10 +283,8 @@ export function DefaultSidebar({ active }: { active: 'home' | 'messages' | 'frie
           <IconSettings size={17} /> Settings
         </NavLink>
         {user?.isOwner && (
-          <div className="nav-item" style={{ color: 'var(--gold)', cursor: 'default' }} title="The owner console arrives in Stage 5">
-            <IconShield size={17} /> Owner console
-            <span className="nav-count">Stage 5</span>
-          </div>
+          <NavLink to="/owner" className="nav-item" data-active={active === 'owner'}>            <IconShield size={17} /> Owner console
+          </NavLink>
         )}
 
         <div className="nav-section-label">Roadmap</div>

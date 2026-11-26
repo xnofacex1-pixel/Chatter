@@ -19,6 +19,7 @@ import Profile from './pages/Profile';
 import ProfileView from './pages/ProfileView';
 import Settings from './pages/Settings';
 import Servers from './pages/Servers';
+import OwnerConsole from './pages/OwnerConsole';
 import NotFound from './pages/NotFound';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -96,6 +97,7 @@ export default function App() {
               <Route path="/servers" element={<ProtectedRoute><Servers /></ProtectedRoute>} />
               <Route path="/servers/:serverId" element={<ProtectedRoute><Servers /></ProtectedRoute>} />
               <Route path="/servers/:serverId/:channelId" element={<ProtectedRoute><Servers /></ProtectedRoute>} />
+              <Route path="/owner" element={<ProtectedRoute><OwnerConsole /></ProtectedRoute>} />
               <Route path="/u/:username" element={<ProtectedRoute><ProfileView /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
