@@ -407,6 +407,9 @@ router.post(
           multiple: Boolean(parsed.data.poll.multiple),
         }
       : null;
+    if (pollInput && !pollInput.question) {
+      return fail(400, 'invalid_poll', 'Add a question for your poll.');
+    }
     if (pollInput && pollInput.options.length < 2) {
       return fail(400, 'invalid_poll', 'A poll needs at least two options.');
     }
