@@ -134,7 +134,7 @@ try {
 
   const relogin = await anonymous.req('/api/auth/login', {
     method: 'POST',
-    body: { email: 'ticketmember@example.com', password: PASSWORD },
+    body: { identifier: 'ticketmember@example.com', password: PASSWORD },
   });
   check(relogin.status === 200, 'login works straight after registration', `status ${relogin.status}`);
 
