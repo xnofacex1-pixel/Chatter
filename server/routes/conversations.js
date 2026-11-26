@@ -348,12 +348,15 @@ router.get(
           .prepare(
             `SELECT * FROM messages
               WHERE conversation_id = ?
+                AND thread_root_id IS NULL
                 AND (created_at < ? OR (created_at = ? AND id < ?))
               ORDER BY created_at DESC, id DESC LIMIT ?`,
           )
           .all(req.params.id, before, before, beforeId || 'ffffffff', limit + 1)
       : db
-          .prepare('SELECT * FROM messages WHERE conversation_id = ? ORDER BY created_at DESC, id DESC LIMIT ?')
+          .prepare(
+            'SELECT * FROM messages WHERE conversation_id = ? AND thread_root_id IS NULL ORDER BY created_at DESC, id DESC LIMIT ?',
+          )
           .all(req.params.id, limit + 1);
 
     const hasMore = rows.length > limit;
@@ -366,6 +369,14 @@ const sendSchema = z.object({
   body: z.string().max(MAX_BODY).optional(),
   attachmentIds: z.array(z.string().uuid()).max(5).optional(),
   replyToId: z.string().uuid().nullable().optional(),
+  threadRootId: z.string().uuid().nullable().optional(),
+  poll: z
+    .object({
+      question: z.string().min(1).max(300),
+      options: z.array(z.string().min(1).max(120)).min(2).max(10),
+      multiple: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 router.post(
@@ -389,7 +400,17 @@ router.post(
 
     const body = (parsed.data.body || '').replace(/\r\n/g, '\n').trim();
     const attachmentIds = parsed.data.attachmentIds || [];
-    if (!body && attachmentIds.length === 0) return fail(400, 'empty_message', 'Write something before sending.');
+    const pollInput = parsed.data.poll
+      ? {
+          question: parsed.data.poll.question.trim(),
+          options: parsed.data.poll.options.map((option) => option.trim()).filter(Boolean),
+          multiple: Boolean(parsed.data.poll.multiple),
+        }
+      : null;
+    if (pollInput && pollInput.options.length < 2) {
+      return fail(400, 'invalid_poll', 'A poll needs at least two options.');
+    }
+    if (!body && attachmentIds.length === 0 && !pollInput) return fail(400, 'empty_message', 'Write something before sending.');
     if (body.length > MAX_BODY) return fail(400, 'message_too_long', 'Messages can be up to 4000 characters.');
 
     if (attachmentIds.length > 0) {
@@ -409,13 +430,40 @@ router.post(
       }
     }
 
+    // Thread replies stay in the conversation but hang off the message that started the thread.
+    let threadRootId = parsed.data.threadRootId || null;
+    if (threadRootId) {
+      const root = db
+        .prepare('SELECT id, thread_root_id FROM messages WHERE id = ? AND conversation_id = ?')
+        .get(threadRootId, req.params.id);
+      if (!root) return fail(400, 'invalid_thread', 'That thread is no longer available.');
+      if (root.thread_root_id) return fail(400, 'nested_thread', 'Threads cannot be nested.');
+      threadRootId = root.id;
+    }
+
     const id = randomUUID();
     const createdAt = nowIso();
     db.transaction(() => {
       db.prepare(
-        `INSERT INTO messages (id, conversation_id, author_id, body, reply_to_id, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-      ).run(id, req.params.id, req.user.id, body, parsed.data.replyToId || null, createdAt);
+        `INSERT INTO messages (id, conversation_id, author_id, body, reply_to_id, thread_root_id, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      ).run(id, req.params.id, req.user.id, body, parsed.data.replyToId || null, threadRootId, createdAt);
+      if (pollInput) {
+        db.prepare('INSERT INTO message_polls (message_id, question, multiple, created_at) VALUES (?, ?, ?, ?)').run(
+          id,
+          pollInput.question,
+          pollInput.multiple ? 1 : 0,
+          createdAt,
+        );
+        pollInput.options.forEach((label, index) => {
+          db.prepare('INSERT INTO message_poll_options (id, message_id, label, position) VALUES (?, ?, ?, ?)').run(
+            randomUUID(),
+            id,
+            label,
+            index,
+          );
+        });
+      }
       for (const mediaId of attachmentIds) {
         db.prepare('INSERT INTO message_attachments (id, message_id, media_id, created_at) VALUES (?, ?, ?, ?)').run(
           randomUUID(),
@@ -424,11 +472,13 @@ router.post(
           createdAt,
         );
       }
-      db.prepare('UPDATE conversations SET last_message_at = ?, updated_at = ? WHERE id = ?').run(
-        createdAt,
-        createdAt,
-        req.params.id,
-      );
+      if (!threadRootId) {
+        db.prepare('UPDATE conversations SET last_message_at = ?, updated_at = ? WHERE id = ?').run(
+          createdAt,
+          createdAt,
+          req.params.id,
+        );
+      }
       db.prepare('UPDATE conversation_members SET last_read_at = ? WHERE conversation_id = ? AND user_id = ?').run(
         createdAt,
         req.params.id,
