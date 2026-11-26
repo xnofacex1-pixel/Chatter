@@ -30,6 +30,7 @@ export interface TicketUser {
   displayName: string | null;
   avatarUrl: string | null;
   isOwner: boolean;
+  isStaff?: boolean;
   title: string | null;
 }
 
