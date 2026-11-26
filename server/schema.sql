@@ -490,3 +490,45 @@ CREATE TABLE IF NOT EXISTS ai_messages (
   created_at      TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_ai_messages_conversation ON ai_messages (conversation_id, created_at);
+
+-- ---------------------------------------------------------------------------
+-- Stage 9: Support tickets (private user <-> staff threads) and tutorial progress.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS support_tickets (
+  id            TEXT PRIMARY KEY,
+  user_id       TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  subject       TEXT NOT NULL,
+  category      TEXT NOT NULL,
+  priority      TEXT NOT NULL DEFAULT 'normal',
+  status        TEXT NOT NULL DEFAULT 'open',
+  assigned_to   TEXT REFERENCES users(id) ON DELETE SET NULL,
+  user_unread   INTEGER NOT NULL DEFAULT 0,
+  staff_unread  INTEGER NOT NULL DEFAULT 0,
+  last_reply_at TEXT,
+  closed_at     TEXT,
+  created_at    TEXT NOT NULL,
+  updated_at    TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_tickets_user ON support_tickets (user_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_tickets_status ON support_tickets (status, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_tickets_assignee ON support_tickets (assigned_to);
+
+CREATE TABLE IF NOT EXISTS support_ticket_messages (
+  id          TEXT PRIMARY KEY,
+  ticket_id   TEXT NOT NULL REFERENCES support_tickets(id) ON DELETE CASCADE,
+  author_id   TEXT REFERENCES users(id) ON DELETE SET NULL,
+  body        TEXT NOT NULL,
+  is_internal INTEGER NOT NULL DEFAULT 0,
+  attachments TEXT,
+  created_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ticket_messages ON support_ticket_messages (ticket_id, created_at);
+
+CREATE TABLE IF NOT EXISTS user_tutorial_progress (
+  user_id           TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  completed_lessons TEXT NOT NULL DEFAULT '[]',
+  last_lesson       TEXT,
+  completed_at      TEXT,
+  updated_at        TEXT NOT NULL
+);
