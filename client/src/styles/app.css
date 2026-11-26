@@ -140,6 +140,29 @@
 
 .sidebar-sheet-head { display: none; }
 
+/* Drag handle for the resizable channel column */
+.resizer {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 22;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.resizer:hover, .resizer:active { background: rgba(var(--accent-rgb) / 0.35); }
+
+/* Members toggle only matters once the panel becomes a drawer */
+.members-toggle { display: none !important; }
+
+/* Presence dot */
+.dot { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--text-faint); }
+.dot[data-presence='online'] { background: var(--success); }
+.dot[data-presence='idle'] { background: var(--warning); }
+.dot[data-presence='dnd'] { background: var(--danger); }
+.dot[data-presence='offline'], .dot[data-presence='invisible'] { background: var(--text-faint); }
+
 /* Conversation / row list items */
 .nav-item {
   display: flex;
