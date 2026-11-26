@@ -37,6 +37,14 @@ export function requireUser(req, _res, next) {
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(found.session.user_id);
   if (!user) return next(Object.assign(new Error('Sign in to continue.'), { status: 401, code: 'not_authenticated' }));
   if (user.is_banned) return next(Object.assign(new Error('This account is suspended.'), { status: 403, code: 'account_banned' }));
+  if (user.suspended_until && user.suspended_until > nowIso()) {
+    return next(
+      Object.assign(new Error('This account is temporarily suspended.'), {
+        status: 403,
+        code: 'account_suspended',
+      }),
+    );
+  }
   req.user = user;
   req.sessionId = found.session.session_id;
   next();
