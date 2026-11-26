@@ -41,6 +41,7 @@ import {
   type AppSettings,
   type AuditEntry,
   type OwnerOverview,
+  type PlatformModerationEntry,
   type ReportEntry,
   type StaffMember,
   type StaffPermission,
