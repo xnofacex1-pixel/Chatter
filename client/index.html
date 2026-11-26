@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Chatter — Your community. Your conversations.</title>
+    <meta name="description" content="Chatter is a modern community and messaging platform. Your community. Your conversations. Your Chatter." />
+    <meta name="theme-color" content="#070d18" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="preload" href="/fonts/chatter-sans.woff2" as="font" type="font/woff2" crossorigin />
+    <style>
+      html, body, #root { height: 100%; }
+      body { margin: 0; background: #070d18; }
+      .boot {
+        position: fixed; inset: 0; display: grid; place-items: center;
+        background: radial-gradient(circle at 50% 20%, #12233d 0%, #070d18 60%);
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif; color: #dbe8fb;
+      }
+      .boot-inner { text-align: center; }
+      .boot-mark {
+        width: 72px; height: 72px; margin: 0 auto 18px; border-radius: 22px;
+        background: linear-gradient(140deg, #38bdf8, #22d3ee 55%, #6366f1);
+        box-shadow: 0 0 44px rgba(56, 189, 248, 0.45);
+        animation: boot-pulse 1.8s ease-in-out infinite;
+      }
+      .boot-title { font-size: 13px; letter-spacing: 0.42em; text-transform: uppercase; color: #7dd3fc; font-weight: 700; }
+      .boot-sub { margin-top: 8px; font-size: 13px; color: #6f819c; }
+      .boot-bar { width: 160px; height: 3px; margin: 20px auto 0; border-radius: 99px; background: rgba(120, 160, 220, 0.16); overflow: hidden; }
+      .boot-bar span { display: block; height: 100%; width: 40%; border-radius: 99px; background: linear-gradient(90deg, #38bdf8, #22d3ee); animation: boot-slide 1.2s ease-in-out infinite; }
+      @keyframes boot-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.94); opacity: 0.82; } }
+      @keyframes boot-slide { 0% { transform: translateX(-110%); } 100% { transform: translateX(320%); } }
+      @media (prefers-reduced-motion: reduce) {
+        .boot-mark, .boot-bar span { animation: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div class="boot">
+        <div class="boot-inner">
+          <div class="boot-mark"></div>
+          <div class="boot-title">Chatter</div>
+          <div class="boot-sub">Your community. Your conversations.</div>
+          <div class="boot-bar"><span></span></div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
