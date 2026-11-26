@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { notificationsApi } from '../lib/notifications';
 import { useRealtime } from '../lib/realtime';
@@ -18,11 +18,13 @@ import {
   IconMessage,
   IconMic,
   IconMicOff,
+  IconPanelRight,
   IconSearch,
   IconSettings,
   IconShield,
   IconUser,
   IconUsers,
+  IconX,
 } from './icons';
 import { useToast } from './Toast';
 
@@ -46,19 +48,131 @@ const railLinks = [
   { to: '/settings', label: 'Settings', icon: IconSettings },
 ];
 
+const tabItems = [
+  { to: '/', label: 'Home', icon: IconHome, end: true },
+  { to: '/messages', label: 'Messages', icon: IconMessage, badge: true },
+  { to: '/friends', label: 'Friends', icon: IconUsers },
+  { to: '/servers', label: 'Servers', icon: IconCompass },
+  { to: '/profile', label: 'You', icon: IconUser },
+];
+
+const RAIL_KEY = 'chatter.railCollapsed';
+const WIDTH_KEY = 'chatter.sidebarWidth';
+const MIN_WIDTH = 232;
+const MAX_WIDTH = 420;
+
+function matches(pathname: string, to: string, end?: boolean) {
+  if (end || to === '/') return pathname === to;
+  return pathname === to || pathname.startsWith(`${to}/`);
+}
+
 export function AppShell({ children, title, subtitle, sidebar, members, headActions, search }: ShellProps) {
   const { user, logout } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
   const [muted, setMuted] = useState(false);
   const [deafened, setDeafened] = useState(false);
+  const [unread, setUnread] = useState(0);
+  const [railCollapsed, setRailCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(RAIL_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    try {
+      const saved = Number(localStorage.getItem(WIDTH_KEY));
+      return Number.isFinite(saved) && saved >= MIN_WIDTH && saved <= MAX_WIDTH ? saved : 288;
+    } catch {
+      return 288;
+    }
+  });
+  const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
 
   useEffect(() => {
     setSidebarOpen(false);
     setMembersOpen(false);
-  }, [title]);
+  }, [title, pathname]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(RAIL_KEY, railCollapsed ? '1' : '0');
+      localStorage.setItem(WIDTH_KEY, String(Math.round(sidebarWidth)));
+    } catch {
+      // Private browsing can block storage; the layout still works for this session.
+    }
+  }, [railCollapsed, sidebarWidth]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSidebarOpen(false);
+        setMembersOpen(false);
+      }
+      if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === 'm') {
+        event.preventDefault();
+        setMembersOpen((open) => !open);
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'b' && !event.shiftKey) {
+        event.preventDefault();
+        setRailCollapsed((value) => !value);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = () => {
+      notificationsApi
+        .unread()
+        .then((result) => {
+          if (!cancelled) setUnread(result.unread);
+        })
+        .catch(() => undefined);
+    };
+    load();
+    const timer = setInterval(load, 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, []);
+
+  useRealtime((event) => {
+    if (event !== 'notification') return;
+    notificationsApi
+      .unread()
+      .then((result) => setUnread(result.unread))
+      .catch(() => undefined);
+  });
+
+  const onResizeStart = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      dragRef.current = { startX: event.clientX, startWidth: sidebarWidth };
+      const onMove = (move: PointerEvent) => {
+        if (!dragRef.current) return;
+        const delta = move.clientX - dragRef.current.startX;
+        setSidebarWidth(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, dragRef.current.startWidth + delta)));
+      };
+      const onUp = () => {
+        dragRef.current = null;
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        document.body.style.cursor = '';
+      };
+      document.body.style.cursor = 'col-resize';
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+    },
+    [sidebarWidth],
+  );
 
   if (!user) return null;
 
@@ -73,37 +187,84 @@ export function AppShell({ children, title, subtitle, sidebar, members, headActi
     navigate('/login');
   };
 
+  const classes = [
+    'shell',
+    sidebar ? '' : 'no-sidebar',
+    members ? '' : 'no-members',
+    sidebarOpen ? 'sidebar-open' : '',
+    membersOpen ? 'members-open' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <div
-      className={`shell ${sidebar ? '' : 'no-sidebar'} ${members ? '' : 'no-members'} ${sidebarOpen ? 'sidebar-open' : ''} ${membersOpen ? 'members-open' : ''}`}
+      className={classes}
+      data-rail={railCollapsed ? 'collapsed' : 'expanded'}
+      style={sidebar ? ({ ['--sidebar-channels' as string]: `${sidebarWidth}px` } as React.CSSProperties) : undefined}
     >
       <nav className="rail" aria-label="Primary">
         <NavLink to="/" className="rail-logo" aria-label="Chatter home">
-          <LogoMark size={40} />
+          <LogoMark size={24} />
         </NavLink>
         <div className="rail-sep" />
-        {railLinks.map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            end={link.to === '/'}
-            className={({ isActive }) => `rail-btn${isActive ? ' rail-btn-active' : ''}`}
-            aria-label={link.label}
-            title={link.label}
-          >
-            <link.icon size={20} />
-            <span className="rail-tip">{link.label}</span>
-          </NavLink>
-        ))}
+        {railLinks.map((link) => {
+          const active = matches(pathname, link.to, link.to === '/');
+          return (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              end={link.to === '/'}
+              className="rail-btn"
+              data-active={active}
+              aria-label={link.label}
+              aria-current={active ? 'page' : undefined}
+            >
+              <link.icon size={20} />
+              <span className="rail-tip">{link.label}</span>
+            </NavLink>
+          );
+        })}
         <div className="rail-spacer" />
+        {user.isOwner && (
+          <NavLink
+            to="/owner"
+            className="rail-btn"
+            data-active={matches(pathname, '/owner')}
+            aria-label="Owner console"
+          >
+            <IconShield size={19} />
+            <span className="rail-tip">Owner console</span>
+          </NavLink>
+        )}
         <button type="button" className="rail-btn" aria-label="Sign out" onClick={handleLogout}>
           <IconLogout size={19} />
           <span className="rail-tip">Sign out</span>
         </button>
       </nav>
 
+      {railCollapsed && (
+        <button
+          type="button"
+          className="rail-restore"
+          aria-label="Show navigation rail"
+          onClick={() => setRailCollapsed(false)}
+        >
+          <IconMenu size={17} />
+        </button>
+      )}
+
       {sidebar && (
         <aside className="sidebar" aria-label="Section navigation">
+          <div className="sidebar-sheet-head">
+            <span className="row" style={{ gap: 8, alignItems: 'center' }}>
+              <LogoMark size={22} />
+              <span className="sidebar-title">Chatter</span>
+            </span>
+            <button type="button" className="icon-btn" aria-label="Close navigation" onClick={() => setSidebarOpen(false)}>
+              <IconX size={18} />
+            </button>
+          </div>
           {sidebar}
           <UserPanel
             user={user}
@@ -111,14 +272,15 @@ export function AppShell({ children, title, subtitle, sidebar, members, headActi
             deafened={deafened}
             onToggleMute={() => {
               setMuted((value) => !value);
-              toast.info(muted ? 'Microphone unmuted' : 'Microphone muted', 'Microphone state is applied to calls in Stage 4.');
+              toast.info(muted ? 'Microphone unmuted' : 'Microphone muted', 'Applies to calls you join next.');
             }}
             onToggleDeafen={() => {
               setDeafened((value) => !value);
-              toast.info(deafened ? 'Undeafened' : 'Deafened', 'Audio routing is applied to calls in Stage 4.');
+              toast.info(deafened ? 'Undeafened' : 'Deafened', 'Applies to calls you join next.');
             }}
             onSettings={() => navigate('/settings')}
           />
+          <div className="resizer" role="separator" aria-orientation="vertical" onPointerDown={onResizeStart} />
         </aside>
       )}
 
@@ -140,14 +302,10 @@ export function AppShell({ children, title, subtitle, sidebar, members, headActi
             {subtitle && <div className="head-sub truncate">{subtitle}</div>}
           </div>
           {search && (
-            <div className="row" style={{ flex: '0 1 320px', minWidth: 140 }}>
-              <div style={{ position: 'relative', width: '100%' }}>
-                <span style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', display: 'flex' }}>
-                  <IconSearch size={16} />
-                </span>
+            <div className="row desktop-only" style={{ flex: '0 1 300px', minWidth: 150 }}>
+              <div className="search-field" style={{ width: '100%' }}>
+                <IconSearch size={15} />
                 <input
-                  className="input"
-                  style={{ paddingLeft: 34, minHeight: 38 }}
                   type="search"
                   value={search.value}
                   placeholder={search.placeholder}
@@ -161,12 +319,12 @@ export function AppShell({ children, title, subtitle, sidebar, members, headActi
           {members && (
             <button
               type="button"
-              className="icon-btn mobile-only"
+              className="icon-btn members-toggle"
               aria-label={membersOpen ? 'Hide members' : 'Show members'}
               aria-expanded={membersOpen}
               onClick={() => setMembersOpen((open) => !open)}
             >
-              <IconUsers size={20} />
+              <IconPanelRight size={19} />
             </button>
           )}
         </header>
@@ -177,12 +335,41 @@ export function AppShell({ children, title, subtitle, sidebar, members, headActi
         <aside className="members" aria-label="Members">
           <div className="sidebar-head">
             <span className="sidebar-title">Members</span>
+            <button
+              type="button"
+              className="icon-btn"
+              style={{ marginLeft: 'auto' }}
+              aria-label="Hide members"
+              onClick={() => setMembersOpen(false)}
+            >
+              <IconX size={17} />
+            </button>
           </div>
           <div className="members-scroll">{members}</div>
         </aside>
       )}
 
       {(sidebarOpen || membersOpen) && <div className="scrim" onClick={closeOverlays} aria-hidden="true" />}
+
+      <nav className="tabbar" aria-label="Mobile navigation">
+        {tabItems.map((item) => {
+          const active = matches(pathname, item.to, item.end);
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className="tabbar-item"
+              data-active={active}
+              aria-current={active ? 'page' : undefined}
+            >
+              <item.icon size={21} />
+              <span>{item.label}</span>
+              {item.badge && unread > 0 && <span className="tabbar-badge">{unread > 9 ? '9+' : unread}</span>}
+            </NavLink>
+          );
+        })}
+      </nav>
     </div>
   );
 }
@@ -213,16 +400,19 @@ function UserPanel({
       >
         <Avatar user={user} size="sm" showPresence />
       </button>
-      <div className="user-panel-info">
+      <div className="user-panel-info" onClick={() => navigate('/profile')} role="presentation">
         <div className="user-panel-name truncate">
-          {user.displayName}
+          <span className="truncate">{user.displayName}</span>
           {user.isOwner && (
             <span style={{ marginLeft: 6 }}>
               <OwnerBadge compact />
             </span>
           )}
         </div>
-        <div className="user-panel-status truncate">{user.customStatus || presenceLabel(user.presence)}</div>
+        <div className="user-panel-status truncate">
+          <span className="dot" data-presence={user.presence} />
+          {user.customStatus || presenceLabel(user.presence)}
+        </div>
       </div>
       <div className="user-panel-actions">
         <button
@@ -243,7 +433,7 @@ function UserPanel({
         >
           {deafened ? <IconHeadphonesOff size={17} /> : <IconHeadphones size={17} />}
         </button>
-        <button type="button" className="icon-btn" aria-label="User settings" onClick={onSettings}>
+        <button type="button" className="icon-btn desktop-only" aria-label="User settings" onClick={onSettings}>
           <IconSettings size={17} />
         </button>
       </div>
@@ -252,7 +442,11 @@ function UserPanel({
 }
 
 /** Sidebar used across the Stage 1 screens. */
-export function DefaultSidebar({ active }: { active: 'home' | 'messages' | 'friends' | 'members' | 'profile' | 'settings' | 'owner' }) {
+export function DefaultSidebar({
+  active,
+}: {
+  active: 'home' | 'messages' | 'friends' | 'members' | 'profile' | 'settings' | 'owner';
+}) {
   const { user } = useAuth();
   const [unread, setUnread] = useState(0);
 
@@ -286,9 +480,9 @@ export function DefaultSidebar({ active }: { active: 'home' | 'messages' | 'frie
   return (
     <>
       <div className="sidebar-head">
-        <div>
+        <div style={{ minWidth: 0 }}>
           <div className="sidebar-subtitle">Chatter</div>
-          <div className="sidebar-title">Community hub</div>
+          <div className="sidebar-title truncate">Community hub</div>
         </div>
       </div>
       <div className="sidebar-scroll">
@@ -314,7 +508,8 @@ export function DefaultSidebar({ active }: { active: 'home' | 'messages' | 'frie
           <IconSettings size={17} /> Settings
         </NavLink>
         {user?.isOwner && (
-          <NavLink to="/owner" className="nav-item" data-active={active === 'owner'}>            <IconShield size={17} /> Owner console
+          <NavLink to="/owner" className="nav-item" data-active={active === 'owner'}>
+            <IconShield size={17} /> Owner console
           </NavLink>
         )}
 
@@ -350,7 +545,11 @@ export function MemberList({ users, loading }: { users: User[]; loading?: boolea
   }
 
   if (users.length === 0) {
-    return <p className="muted small" style={{ padding: 8 }}>No members to show yet.</p>;
+    return (
+      <p className="muted small" style={{ padding: 8 }}>
+        No members to show yet.
+      </p>
+    );
   }
 
   return (
@@ -370,7 +569,7 @@ function MemberGroup({ label, users }: { label: string; users: User[] }) {
         <NavLink key={member.id} to={`/u/${member.username}`} className="member-row">
           <Avatar user={member} size="sm" showPresence />
           <span className="grow truncate">
-            <span className="member-name truncate" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span className="member-name">
               <span className="truncate">{member.displayName}</span>
               {member.isOwner && <OwnerBadge compact />}
             </span>
