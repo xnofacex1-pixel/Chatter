@@ -7,6 +7,7 @@ import { publicUser } from '../lib/presenters.js';
 import { rateLimit } from '../lib/rate-limit.js';
 import { audit } from '../lib/sessions.js';
 import { requireUser } from './me.js';
+import { mailConfigured } from '../lib/mailer.js';
 import {
   STAFF_PERMISSIONS,
   STAFF_ROLES,
@@ -581,7 +582,7 @@ router.get(
   '/settings',
   route(async (req, res) => {
     requireOwner(req);
-    res.json({ settings: appSettings() });
+    res.json({ settings: appSettings(), emailConfigured: mailConfigured() });
   }),
 );
 

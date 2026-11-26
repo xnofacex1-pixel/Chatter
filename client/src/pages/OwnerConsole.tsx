@@ -36,16 +36,122 @@ import {
 } from '../lib/admin';
 import '../styles/stage5.css';
 
-type Tab = 'overview' | 'users' | 'servers' | 'staff' | 'reports' | 'settings' | 'audit';
+type Panel =
+  | 'overview'
+  | 'users'
+  | 'servers'
+  | 'channels'
+  | 'messages'
+  | 'staff'
+  | 'reports'
+  | 'settings'
+  | 'audit'
+  | 'moderation';
 
-const tabs: { id: Tab; label: string }[] = [
-  { id: 'overview', label: 'Dashboard' },
-  { id: 'users', label: 'Members' },
-  { id: 'servers', label: 'Communities' },
-  { id: 'staff', label: 'Staff' },
-  { id: 'reports', label: 'Reports' },
-  { id: 'settings', label: 'Platform' },
-  { id: 'audit', label: 'Audit log' },
+type Section =
+  | 'dashboard'
+  | 'activity'
+  | 'health'
+  | 'users'
+  | 'servers'
+  | 'channels'
+  | 'messages'
+  | 'reports'
+  | 'administrators'
+  | 'moderators'
+  | 'support'
+  | 'permissions'
+  | 'announcements'
+  | 'notifications'
+  | 'registration'
+  | 'maintenance'
+  | 'application'
+  | 'uploads'
+  | 'audit'
+  | 'moderation'
+  | 'security'
+  | 'admin-actions';
+
+const PANEL_FOR: Record<Section, Panel> = {
+  dashboard: 'overview',
+  activity: 'overview',
+  health: 'overview',
+  users: 'users',
+  servers: 'servers',
+  channels: 'channels',
+  messages: 'messages',
+  reports: 'reports',
+  administrators: 'staff',
+  moderators: 'staff',
+  support: 'staff',
+  permissions: 'staff',
+  announcements: 'settings',
+  notifications: 'settings',
+  registration: 'settings',
+  maintenance: 'settings',
+  application: 'settings',
+  uploads: 'settings',
+  audit: 'audit',
+  moderation: 'moderation',
+  security: 'audit',
+  'admin-actions': 'audit',
+};
+
+const STAFF_SECTIONS: Section[] = ['administrators', 'moderators', 'support'];
+const ROLE_FOR_SECTION: Partial<Record<Section, StaffRole>> = {
+  administrators: 'administrator',
+  moderators: 'moderator',
+  support: 'support',
+};
+
+const navGroups: { label: string; items: { id: Section; label: string; icon: typeof IconHome }[] }[] = [
+  {
+    label: 'Overview',
+    items: [
+      { id: 'dashboard', label: 'Dashboard', icon: IconHome },
+      { id: 'activity', label: 'Activity', icon: IconSparkle },
+      { id: 'health', label: 'System health', icon: IconInfo },
+    ],
+  },
+  {
+    label: 'Management',
+    items: [
+      { id: 'users', label: 'Users', icon: IconUsers },
+      { id: 'servers', label: 'Servers', icon: IconGlobe },
+      { id: 'channels', label: 'Channels', icon: IconAt },
+      { id: 'messages', label: 'Messages', icon: IconMessage },
+      { id: 'reports', label: 'Reports', icon: IconWarning },
+    ],
+  },
+  {
+    label: 'Staff',
+    items: [
+      { id: 'administrators', label: 'Administrators', icon: IconShield },
+      { id: 'moderators', label: 'Moderators', icon: IconUser },
+      { id: 'support', label: 'Support staff', icon: IconHeadphones },
+      { id: 'permissions', label: 'Staff permissions', icon: IconLock },
+    ],
+  },
+  {
+    label: 'Platform',
+    items: [
+      { id: 'announcements', label: 'Announcements', icon: IconBell },
+      { id: 'notifications', label: 'Notifications', icon: IconMail },
+      { id: 'registration', label: 'Registration', icon: IconUser },
+      { id: 'maintenance', label: 'Maintenance mode', icon: IconWarning },
+      { id: 'application', label: 'Application settings', icon: IconSettings },
+      { id: 'uploads', label: 'Upload limits', icon: IconUpload },
+    ],
+  },
+  {
+    label: 'Security',
+    items: [
+      { id: 'audit', label: 'Audit logs', icon: IconShield },
+      { id: 'moderation', label: 'Moderation history', icon: IconWarning },
+      { id: 'security', label: 'Security events', icon: IconLock },
+      { id: 'admin-actions', label: 'Administrative actions', icon: IconCrown },
+    ],
+  },
 ];
 
 const errorMessage = (error: unknown, fallback: string) =>
@@ -64,7 +170,8 @@ export default function OwnerConsole() {
 
   const [access, setAccess] = useState<AdminAccess | null>(null);
   const [accessError, setAccessError] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>('overview');
+  const [section, setSection] = useState<Section>('dashboard');
+  const tab = PANEL_FOR[section];
 
   const [overview, setOverview] = useState<OwnerOverview | null>(null);
   const [overviewError, setOverviewError] = useState<string | null>(null);
@@ -179,6 +286,7 @@ export default function OwnerConsole() {
       const result = await adminApi.settings();
       setSettings(result.settings);
       setSettingsDraft(result.settings);
+      setEmailConfigured(result.emailConfigured ?? null);
     } catch (error) {
       setSettingsError(errorMessage(error, 'Platform settings are unavailable right now.'));
     }

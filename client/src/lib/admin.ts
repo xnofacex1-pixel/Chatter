@@ -83,6 +83,52 @@ export interface AuditEntry {
   createdAt: string;
 }
 
+export interface AdminChannel {
+  id: string;
+  name: string;
+  type: string;
+  topic: string | null;
+  isPrivate: boolean;
+  readOnly: boolean;
+  slowmodeSeconds: number;
+  createdAt: string;
+  serverId: string;
+  serverName: string;
+  serverSuspended: boolean;
+  categoryName: string | null;
+  messageCount: number;
+}
+
+export interface AdminMessage {
+  id: string;
+  body: string;
+  createdAt: string;
+  editedAt: string | null;
+  pinned: boolean;
+  authorId: string | null;
+  authorName: string | null;
+  authorUsername: string | null;
+  kind: string;
+  title: string | null;
+  channelName: string | null;
+  serverName: string | null;
+  attachmentCount: number;
+  reactionCount: number;
+}
+
+export interface PlatformModerationEntry {
+  id: string;
+  action: string;
+  reason: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+  actorName: string | null;
+  actorUsername: string | null;
+  targetId: string | null;
+  targetName: string | null;
+  targetUsername: string | null;
+}
+
 export interface AppSettings {
   appName: string;
   announcement: string;
@@ -178,7 +224,13 @@ export const adminApi = {
   reports: (status = 'open') => request<{ reports: ReportEntry[] }>(`/admin/reports?status=${status}`),
   resolveReport: (id: string, status: 'resolved' | 'dismissed', note: string) =>
     request<{ ok: boolean }>(`/admin/reports/${id}/resolve`, { method: 'POST', body: { status, note } }),
-  settings: () => request<{ settings: AppSettings }>('/admin/settings'),
+  channels: (query = '') =>
+    request<{ total: number; channels: AdminChannel[] }>(`/admin/channels?query=${encodeURIComponent(query)}`),
+  messages: (query = '') =>
+    request<{ total: number; messages: AdminMessage[] }>(`/admin/messages?query=${encodeURIComponent(query)}`),
+  moderation: (query = '') =>
+    request<{ entries: PlatformModerationEntry[] }>(`/admin/moderation?query=${encodeURIComponent(query)}`),
+  settings: () => request<{ settings: AppSettings; emailConfigured?: boolean }>('/admin/settings'),
   saveSettings: (patch: Partial<AppSettings>) =>
     request<{ ok: boolean; settings: AppSettings }>('/admin/settings', { method: 'PATCH', body: patch }),
   audit: (query = '', limit = 60) =>
