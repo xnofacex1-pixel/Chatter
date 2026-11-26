@@ -201,6 +201,33 @@ export class MeshSession {
     for (const track of this.local.getAudioTracks()) track.enabled = enabled;
   }
 
+  /** Swap the outgoing microphone track after a device change. */
+  async useAudioTrack(track: MediaStreamTrack | null): Promise<void> {
+    let added = false;
+    for (const pc of this.peers.values()) {
+      const sender = pc.getSenders().find((entry) => entry.track?.kind === 'audio');
+      if (track) {
+        if (sender) {
+          try {
+            await sender.replaceTrack(track);
+          } catch {
+            /* ignore */
+          }
+        } else {
+          pc.addTrack(track, this.local);
+          added = true;
+        }
+      } else if (sender) {
+        try {
+          await sender.replaceTrack(null);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+    if (track && added) await this.renegotiate();
+  }
+
   /** Swap the outgoing video track (camera, screen share, or null to stop). */
   async useVideoTrack(track: MediaStreamTrack | null): Promise<void> {
     let added = false;
