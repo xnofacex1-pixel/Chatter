@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AppShell, DefaultSidebar, MemberList, useDirectory } from '../components/AppShell';
+import { AppShell, DefaultSidebar } from '../components/AppShell';
 import { Avatar } from '../components/Avatar';
 import { InstallPrompt } from '../components/InstallPrompt';
 import { useToast } from '../components/Toast';
@@ -38,7 +38,6 @@ const matches = (entry: AppNotification, filter: FilterId) => {
 
 export default function Notifications() {
   const { settings } = useAuth();
-  const directory = useDirectory();
   const toast = useToast();
   const navigate = useNavigate();
   const [items, setItems] = useState<AppNotification[]>([]);
@@ -156,7 +155,6 @@ export default function Notifications() {
       title="Notifications"
       subtitle="Messages, friend requests, calls and platform announcements"
       sidebar={<DefaultSidebar active="home" />}
-      members={<MemberList users={directory.users} loading={directory.loading} />}
       headActions={
         <div className="row" style={{ gap: 6 }}>
           <button type="button" className="btn btn-sm" onClick={markAll} disabled={unread === 0}>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AppShell, DefaultSidebar, MemberList, useDirectory } from '../components/AppShell';
+import { AppShell, DefaultSidebar } from '../components/AppShell';
 import { Avatar, OwnerBadge } from '../components/Avatar';
 import { ImageInput, useImageUpload, useProfileSave } from '../components/profile-shared';
 import { useToast } from '../components/Toast';
@@ -12,7 +12,6 @@ import { describeError, usernameProblem } from '../lib/validation';
 
 export default function Profile() {
   const { user, setUser } = useAuth();
-  const directory = useDirectory();
   const toast = useToast();
   const avatar = useImageUpload('avatar');
   const banner = useImageUpload('banner');
@@ -89,7 +88,6 @@ export default function Profile() {
       title="My profile"
       subtitle="How you appear across Chatter"
       sidebar={<DefaultSidebar active="profile" />}
-      members={<MemberList users={directory.users} loading={directory.loading} />}
       headActions={
         <Link className="btn btn-ghost btn-sm" to={`/u/${user.username}`}>
           <IconUser size={15} /> Public view

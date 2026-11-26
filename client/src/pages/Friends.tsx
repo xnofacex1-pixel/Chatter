@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AppShell, DefaultSidebar, MemberList, useDirectory } from '../components/AppShell';
+import { AppShell, DefaultSidebar } from '../components/AppShell';
 import { Avatar, OwnerBadge } from '../components/Avatar';
 import { useToast } from '../components/Toast';
 import { IconCheck, IconClose, IconLock, IconMessage, IconPlus, IconSearch, IconShield, IconUsers } from '../components/icons';
@@ -20,7 +20,6 @@ const TABS: { id: Tab; label: string }[] = [
 export default function Friends() {
   const navigate = useNavigate();
   const toast = useToast();
-  const directory = useDirectory();
 
   const [tab, setTab] = useState<Tab>('all');
   const [data, setData] = useState<FriendsPayload | null>(null);
@@ -121,7 +120,6 @@ export default function Friends() {
       title="Friends"
       subtitle="Your people, your conversations"
       sidebar={<DefaultSidebar active="friends" />}
-      members={<MemberList users={directory.users} loading={directory.loading} />}
       headActions={
         <button type="button" className="btn btn-primary" onClick={() => setTab('add')} data-testid="add-friend-open">
           <IconPlus size={16} /> Add friend

@@ -12,7 +12,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
 import Home from './pages/Home';
-import Members from './pages/Members';
+import Ai from './pages/Ai';
 import Friends from './pages/Friends';
 import Messages from './pages/Messages';
 import Profile from './pages/Profile';
@@ -89,7 +89,8 @@ export default function App() {
               <Route path="/reset-password" element={<GuestRoute><ResetPassword /></GuestRoute>} />
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-              <Route path="/members" element={<ProtectedRoute><Members /></ProtectedRoute>} />
+              <Route path="/members" element={<Navigate to="/friends" replace />} />
+              <Route path="/ai" element={<ProtectedRoute><Ai /></ProtectedRoute>} />
               <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
               <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
               <Route path="/messages/:id" element={<ProtectedRoute><Messages /></ProtectedRoute>} />

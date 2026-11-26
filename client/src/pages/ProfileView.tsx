@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
-import { AppShell, DefaultSidebar, MemberList, useDirectory } from '../components/AppShell';
+import { AppShell, DefaultSidebar } from '../components/AppShell';
 import { Avatar, OwnerBadge } from '../components/Avatar';
 import { EmptyState, InlineLoader } from '../components/LoadingScreen';
 import { IconChevronLeft, IconUser } from '../components/icons';
@@ -11,7 +11,6 @@ import { formatDate, presenceLabel } from '../lib/format';
 export default function ProfileView() {
   const { username = '' } = useParams();
   const { user: viewer } = useAuth();
-  const directory = useDirectory();
   const { data, loading, error } = useAsyncData(() => api.user(username), [username]);
 
   const user = data?.user;
@@ -22,7 +21,6 @@ export default function ProfileView() {
       title={user ? user.displayName : 'Profile'}
       subtitle={user ? `@${user.username}` : 'Member profile'}
       sidebar={<DefaultSidebar active="members" />}
-      members={<MemberList users={directory.users} loading={directory.loading} />}
       headActions={
         <Link className="btn btn-ghost btn-sm" to="/members">
           <IconChevronLeft size={15} /> Members

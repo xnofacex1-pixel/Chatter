@@ -22,6 +22,7 @@ import {
   IconSearch,
   IconSettings,
   IconShield,
+  IconSparkle,
   IconUser,
   IconUsers,
   IconClose,
@@ -43,8 +44,7 @@ const railLinks = [
   { to: '/servers', label: 'Communities', icon: IconCompass },
   { to: '/messages', label: 'Messages', icon: IconMessage },
   { to: '/friends', label: 'Friends', icon: IconUsers },
-  { to: '/members', label: 'Members', icon: IconUsers },
-  { to: '/profile', label: 'My profile', icon: IconUser },
+  { to: '/ai', label: 'Chatter AI', icon: IconSparkle },
   { to: '/settings', label: 'Settings', icon: IconSettings },
 ];
 
@@ -53,6 +53,7 @@ const tabItems = [
   { to: '/messages', label: 'Messages', icon: IconMessage, badge: true },
   { to: '/friends', label: 'Friends', icon: IconUsers },
   { to: '/servers', label: 'Servers', icon: IconCompass },
+  { to: '/ai', label: 'AI', icon: IconSparkle },
   { to: '/profile', label: 'You', icon: IconUser },
 ];
 
@@ -279,6 +280,7 @@ export function AppShell({ children, title, subtitle, sidebar, members, headActi
               toast.info(deafened ? 'Undeafened' : 'Deafened', 'Applies to calls you join next.');
             }}
             onSettings={() => navigate('/settings')}
+            onLogout={handleLogout}
           />
           <div className="resizer" role="separator" aria-orientation="vertical" onPointerDown={onResizeStart} />
         </aside>
@@ -381,6 +383,7 @@ function UserPanel({
   onToggleMute,
   onToggleDeafen,
   onSettings,
+  onLogout,
 }: {
   user: User;
   muted: boolean;
@@ -388,32 +391,47 @@ function UserPanel({
   onToggleMute: () => void;
   onToggleDeafen: () => void;
   onSettings: () => void;
+  onLogout: () => void;
 }) {
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const go = (path: string) => {
+    setMenuOpen(false);
+    navigate(path);
+  };
+
   return (
     <div className="user-panel">
       <button
         type="button"
-        onClick={() => navigate('/profile')}
+        onClick={() => setMenuOpen((open) => !open)}
         style={{ background: 'none', border: 0, padding: 0, display: 'flex' }}
-        aria-label="Open my profile"
+        aria-label="Open account menu"
+        aria-expanded={menuOpen}
       >
         <Avatar user={user} size="sm" showPresence />
       </button>
-      <div className="user-panel-info" onClick={() => navigate('/profile')} role="presentation">
-        <div className="user-panel-name truncate">
+      <button
+        type="button"
+        className="user-panel-info"
+        onClick={() => setMenuOpen((open) => !open)}
+        aria-label="Open account menu"
+        aria-expanded={menuOpen}
+      >
+        <span className="user-panel-name truncate">
           <span className="truncate">{user.displayName}</span>
           {user.isOwner && (
             <span style={{ marginLeft: 6 }}>
               <OwnerBadge compact />
             </span>
           )}
-        </div>
-        <div className="user-panel-status truncate">
+        </span>
+        <span className="user-panel-status truncate">
           <span className="dot" data-presence={user.presence} />
           {user.customStatus || presenceLabel(user.presence)}
-        </div>
-      </div>
+        </span>
+      </button>
       <div className="user-panel-actions">
         <button
           type="button"
@@ -437,6 +455,44 @@ function UserPanel({
           <IconSettings size={17} />
         </button>
       </div>
+
+      {menuOpen && (
+        <>
+          <div className="user-menu-scrim" onClick={() => setMenuOpen(false)} aria-hidden="true" />
+          <div className="user-menu" role="menu" aria-label="Account menu">
+            <div className="user-menu-head">
+              <div className="user-menu-name truncate">{user.displayName}</div>
+              <div className="tiny muted truncate">@{user.username}</div>
+            </div>
+            <button type="button" role="menuitem" className="user-menu-item" onClick={() => go('/profile')}>
+              <IconUser size={15} /> My profile
+            </button>
+            <button type="button" role="menuitem" className="user-menu-item" onClick={() => go('/ai')}>
+              <IconSparkle size={15} /> Chatter AI
+            </button>
+            <button type="button" role="menuitem" className="user-menu-item" onClick={() => go('/settings')}>
+              <IconSettings size={15} /> Settings
+            </button>
+            {user.isOwner && (
+              <button type="button" role="menuitem" className="user-menu-item owner-item" onClick={() => go('/owner')}>
+                <IconShield size={15} /> Owner Console
+              </button>
+            )}
+            <div className="user-menu-sep" />
+            <button
+              type="button"
+              role="menuitem"
+              className="user-menu-item danger"
+              onClick={() => {
+                setMenuOpen(false);
+                onLogout();
+              }}
+            >
+              <IconLogout size={15} /> Sign out
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -445,7 +501,7 @@ function UserPanel({
 export function DefaultSidebar({
   active,
 }: {
-  active: 'home' | 'messages' | 'friends' | 'members' | 'profile' | 'settings' | 'owner';
+  active: 'home' | 'messages' | 'friends' | 'profile' | 'settings' | 'owner' | 'ai';
 }) {
   const { user } = useAuth();
   const [unread, setUnread] = useState(0);
@@ -496,8 +552,8 @@ export function DefaultSidebar({
         <NavLink to="/friends" className="nav-item" data-active={active === 'friends'}>
           <IconUsers size={17} /> Friends
         </NavLink>
-        <NavLink to="/members" className="nav-item" data-active={active === 'members'}>
-          <IconUsers size={17} /> Members
+        <NavLink to="/ai" className="nav-item" data-active={active === 'ai'}>
+          <IconSparkle size={17} /> Chatter AI
         </NavLink>
         <NavLink to="/profile" className="nav-item" data-active={active === 'profile'}>
           <IconUser size={17} /> My profile
