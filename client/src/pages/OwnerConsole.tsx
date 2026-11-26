@@ -256,22 +256,7 @@ export default function OwnerConsole() {
     return patch;
   }, [settings, settingsDraft]);
 
-  const sidebar = (
-    <DefaultSidebar>
-      <div className="nav-section-label">Owner</div>
-      {tabs.map((entry) => (
-        <button
-          key={entry.id}
-          type="button"
-          className="nav-item"
-          data-active={tab === entry.id}
-          onClick={() => setTab(entry.id)}
-        >
-          <IconShield size={17} /> {entry.label}
-        </button>
-      ))}
-    </DefaultSidebar>
-  );
+  const sidebar = <DefaultSidebar active="owner" />;
 
   if (accessError) {
     return (
