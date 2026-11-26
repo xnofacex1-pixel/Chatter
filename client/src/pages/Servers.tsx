@@ -62,6 +62,41 @@ export default function Servers() {
   const [event, setEvent] = useState<ChatEvent | null>(null);
   const [modal, setModal] = useState<ModalKind>(null);
   const [dragChannelId, setDragChannelId] = useState<string | null>(null);
+
+  const moveChannel = useCallback(
+    async (targetId: string) => {
+      const sourceId = dragChannelId;
+      setDragChannelId(null);
+      if (!detail || !sourceId || sourceId === targetId) return;
+      const ordered = [...detail.channels].sort((a, b) => a.position - b.position);
+      const from = ordered.findIndex((channel) => channel.id === sourceId);
+      const to = ordered.findIndex((channel) => channel.id === targetId);
+      if (from < 0 || to < 0) return;
+      const target = ordered[to];
+      const [moved] = ordered.splice(from, 1);
+      const anchor = ordered.findIndex((channel) => channel.id === targetId);
+      ordered.splice(anchor + (from < to ? 1 : 0), 0, { ...moved, categoryId: target.categoryId });
+      const nextChannels = ordered.map((channel, index) => ({ ...channel, position: index }));
+      setDetail({ ...detail, channels: nextChannels });
+      try {
+        await serverApi.reorderChannels(
+          detail.server.id,
+          nextChannels.map((channel) => ({
+            id: channel.id,
+            position: channel.position,
+            categoryId: channel.categoryId,
+          })),
+        );
+      } catch {
+        try {
+          setDetail(await serverApi.get(detail.server.id));
+        } catch {
+          /* the sidebar keeps the order it had before the drag */
+        }
+      }
+    },
+    [detail, dragChannelId],
+  );
   const [menuOpen, setMenuOpen] = useState(false);
   const [discoverQuery, setDiscoverQuery] = useState('');
   const [discoveries, setDiscoveries] = useState<ServerSummary[]>([]);
@@ -298,6 +333,16 @@ export default function Servers() {
                     to={`/servers/${detail.server.id}/${channel.id}`}
                     className="channel-row"
                     data-active={channel.id === channelId}
+                    draggable={canManageChannels}
+                    onDragStart={() => setDragChannelId(channel.id)}
+                    onDragOver={(event) => {
+                      if (dragChannelId && dragChannelId !== channel.id) event.preventDefault();
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      void moveChannel(channel.id);
+                    }}
+                    onDragEnd={() => setDragChannelId(null)}
                   >
                     <ChannelGlyph type={channel.type} />
                     <span className="truncate grow">{channel.name}</span>
