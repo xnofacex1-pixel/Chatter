@@ -1048,6 +1048,20 @@ export default function Messages() {
                 >
                   <IconPaperclip size={17} />
                 </button>
+                <button
+                  type="button"
+                  className="icon-btn"
+                  aria-label="Create a poll"
+                  title="Create a poll"
+                  onClick={() => setPollOpen(true)}
+                  disabled={!detail}
+                >
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                    <line x1="6" y1="20" x2="6" y2="13" />
+                    <line x1="12" y1="20" x2="12" y2="6" />
+                    <line x1="18" y1="20" x2="18" y2="15" />
+                  </svg>
+                </button>
                 <button type="button" className="icon-btn" aria-label="Emoji picker" title="Emoji" onClick={() => setEmojiOpen((open) => !open)}>
                   <IconSmile size={17} />
                 </button>
