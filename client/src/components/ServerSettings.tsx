@@ -211,7 +211,7 @@ function OverviewPanel({
               username: detail.server.name,
               displayName: detail.server.name,
               avatarUrl: detail.server.iconUrl,
-              accentColor: null,
+              accentColor: '',
               presence: 'offline',
               isOwner: false,
             }}

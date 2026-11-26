@@ -2,19 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api, ApiError, type AttachmentUpload, type Message } from '../lib/api';
 import { has, serverApi, P, type ServerChannel } from '../lib/servers';
 import { Avatar, OwnerBadge } from './Avatar';
-import {
-  IconClose,
-  IconDownload,
-  IconEdit,
-  IconLock,
-  IconPaperclip,
-  IconPin,
-  IconReply,
-  IconSend,
-  IconSmile,
-  IconTrash,
-} from './icons';
-import { IconMore } from './icons-extra';
+import { IconClose, IconLock, IconPin, IconTrash } from './icons';
+import { IconDownload, IconEdit, IconPaperclip, IconReply, IconSend, IconSmile } from './icons-extra';
 import { useToast } from './Toast';
 
 export type ChatEvent = { seq: number; name: string; data: Record<string, unknown> };
