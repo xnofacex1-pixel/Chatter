@@ -1,4 +1,10 @@
-import { request, type User } from './api';
+import { request as apiRequest, type User } from './api';
+
+type RequestOptions = NonNullable<Parameters<typeof apiRequest>[1]>;
+
+// Admin routes are mounted at /api/admin on the server; apiRequest sends the path verbatim,
+// so every admin call needs the /api prefix or the SPA fallback answers with HTML.
+const request = <T,>(path: string, options?: RequestOptions): Promise<T> => apiRequest<T>(`/api${path}`, options);
 
 export type StaffRole = 'administrator' | 'moderator' | 'support';
 
