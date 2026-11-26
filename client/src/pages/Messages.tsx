@@ -1148,7 +1148,7 @@ export default function Messages() {
           onCancel={() => setPollOpen(false)}
           onSubmit={async (draft) => {
             try {
-              const data = await api.sendMessage(id, {
+              const data = await api.sendMessage(id as string, {
                 poll: { question: draft.question, options: draft.options, multiple: draft.multiple },
               });
               upsert(data.message);
@@ -1161,7 +1161,7 @@ export default function Messages() {
       )}
       {threadFor && (
         <ThreadPanel
-          conversationId={id}
+          conversationId={id as string}
           root={threadFor}
           meId={me?.id ?? ''}
           canSend={Boolean(detail)}
