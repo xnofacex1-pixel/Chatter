@@ -78,12 +78,26 @@ export function serializeCall(call, viewerId = null) {
 
 /** Everyone who should learn about a call: conversation members or community. */
 export function callAudience(call) {
+  // Channel calls carry the channel id directly; channel conversations link through
+  // conversations.channel_id. `conversations` has no server_id column, so the
+  // community is always resolved from the channel row.
+  const channelServerId = (channelId) => {
+    if (!channelId) return null;
+    const row = db.prepare('SELECT server_id FROM server_channels WHERE id = ?').get(channelId);
+    return row?.server_id ?? null;
+  };
+
+  if (call.channel_id) {
+    const serverId = channelServerId(call.channel_id);
+    return serverId ? serverMemberIds(serverId) : joinedUserIds(call.id);
+  }
   if (call.conversation_id) {
     const conversation = db
-      .prepare('SELECT kind, server_id FROM conversations WHERE id = ?')
+      .prepare('SELECT kind, channel_id FROM conversations WHERE id = ?')
       .get(call.conversation_id);
-    if (conversation?.kind === 'channel' && conversation.server_id) {
-      return serverMemberIds(conversation.server_id);
+    if (conversation?.kind === 'channel') {
+      const serverId = channelServerId(conversation.channel_id);
+      if (serverId) return serverMemberIds(serverId);
     }
     return memberIds(call.conversation_id);
   }
