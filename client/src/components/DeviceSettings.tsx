@@ -142,7 +142,7 @@ export function DeviceSettings() {
       await refreshDevices();
     } catch (cause) {
       stopTest();
-      setPermissionError(describeError(cause));
+      setPermissionError(describeError(cause).message);
     }
   };
 
@@ -160,9 +160,9 @@ export function DeviceSettings() {
       oscillator.start();
       oscillator.stop(context.currentTime + 0.6);
       oscillator.onended = () => void context.close();
-      toast.push({ tone: 'success', title: 'Speaker test played', message: 'You should have heard a short chime.' });
+      toast.push({ kind: 'success', title: 'Speaker test played', description: 'You should have heard a short chime.' });
     } catch (cause) {
-      toast.push({ tone: 'danger', title: 'Speaker test failed', message: describeError(cause) });
+      toast.push({ kind: 'error', title: 'Speaker test failed', description: describeError(cause).message });
     }
   };
 
@@ -171,13 +171,13 @@ export function DeviceSettings() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
       stream.getTracks().forEach((track) => track.stop());
       await refreshDevices();
-      toast.push({ tone: 'success', title: 'Device access granted' });
+      toast.push({ kind: 'success', title: 'Device access granted' });
     } catch (cause) {
-      setPermissionError(describeError(cause));
+      setPermissionError(describeError(cause).message);
       toast.push({
-        tone: 'warning',
+        kind: 'info',
         title: 'Device access was not granted',
-        message: 'Microphone and camera stay off until you allow them in the browser.',
+        description: 'Microphone and camera stay off until you allow them in the browser.',
       });
     }
   };

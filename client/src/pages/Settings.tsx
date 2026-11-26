@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AppShell, DefaultSidebar, MemberList, useDirectory } from '../components/AppShell';
 import { useToast } from '../components/Toast';
-import { IconBell, IconCamera, IconCheck, IconHeadphones, IconLock, IconLogout, IconMic, IconMonitor, IconSettings, IconShield, IconSparkle, IconUser } from '../components/icons';
+import { IconBell, IconCheck, IconLock, IconLogout, IconMic, IconMonitor, IconSettings, IconShield, IconSparkle, IconUser } from '../components/icons';
 import { api, type SessionInfo, type Settings as SettingsType } from '../lib/api';
 import { DEFAULT_SETTINGS, useAuth } from '../lib/auth';
 import { ACCENT_COLOURS, formatDateTime, relativeTime } from '../lib/format';

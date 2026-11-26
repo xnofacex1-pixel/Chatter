@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { IconDownload, IconClose } from './icons';
+import { IconDownload, IconClose } from './icons-extra';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;

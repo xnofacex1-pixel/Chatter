@@ -91,9 +91,9 @@ export default function Notifications() {
       const result = await notificationsApi.markAllRead();
       setUnread(result.unread);
       setItems((current) => current.map((entry) => ({ ...entry, readAt: entry.readAt ?? new Date().toISOString() })));
-      toast.push({ tone: 'success', title: 'All notifications marked as read' });
+      toast.push({ kind: 'success', title: 'All notifications marked as read' });
     } catch (cause) {
-      toast.push({ tone: 'danger', title: 'Could not mark notifications', message: cause instanceof Error ? cause.message : undefined });
+      toast.push({ kind: 'error', title: 'Could not mark notifications', description: cause instanceof Error ? cause.message : undefined });
     }
   };
 
@@ -102,9 +102,9 @@ export default function Notifications() {
       const result = await notificationsApi.clearRead();
       setItems((current) => current.filter((entry) => !entry.readAt));
       setUnread(result.unread);
-      toast.push({ tone: 'success', title: 'Cleared read notifications' });
+      toast.push({ kind: 'success', title: 'Cleared read notifications' });
     } catch (cause) {
-      toast.push({ tone: 'danger', title: 'Could not clear notifications', message: cause instanceof Error ? cause.message : undefined });
+      toast.push({ kind: 'error', title: 'Could not clear notifications', description: cause instanceof Error ? cause.message : undefined });
     }
   };
 
@@ -129,24 +129,24 @@ export default function Notifications() {
       setItems((current) => current.filter((item) => item.id !== entry.id));
       setUnread(result.unread);
     } catch (cause) {
-      toast.push({ tone: 'danger', title: 'Could not dismiss notification', message: cause instanceof Error ? cause.message : undefined });
+      toast.push({ kind: 'error', title: 'Could not dismiss notification', description: cause instanceof Error ? cause.message : undefined });
     }
   };
 
   const enableDesktop = async () => {
     if (typeof Notification === 'undefined') {
-      toast.push({ tone: 'danger', title: 'Desktop notifications are not supported here' });
+      toast.push({ kind: 'error', title: 'Desktop notifications are not supported here' });
       return;
     }
     const result = await Notification.requestPermission();
     setPermission(result);
     if (result === 'granted') {
-      toast.push({ tone: 'success', title: 'Desktop notifications enabled' });
+      toast.push({ kind: 'success', title: 'Desktop notifications enabled' });
     } else {
       toast.push({
-        tone: 'warning',
+        kind: 'info',
         title: 'Desktop notifications blocked',
-        message: 'Allow notifications for this site in your browser settings, then try again.',
+        description: 'Allow notifications for this site in your browser settings, then try again.',
       });
     }
   };
@@ -242,7 +242,7 @@ export default function Notifications() {
                           username: entry.actor.username,
                           displayName: entry.actor.displayName,
                           avatarUrl: entry.actor.avatarUrl,
-                          accentColor: null,
+                          accentColor: '',
                           presence: 'offline',
                           isOwner: false,
                         }}
