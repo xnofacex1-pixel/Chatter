@@ -138,3 +138,19 @@ export const IconPanelRight = (props: IconProps) => (
     <path d="M15 4v16" />
   </Icon>
 );
+
+export const IconLifeBuoy = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="8.6" />
+    <circle cx="12" cy="12" r="3.4" />
+    <path d="M5.9 5.9 9.6 9.6M14.4 14.4l3.7 3.7M18.1 5.9 14.4 9.6M9.6 14.4l-3.7 3.7" />
+  </Icon>
+);
+
+export const IconGraduationCap = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M2.6 8.6 12 4.4l9.4 4.2-9.4 4.2-9.4-4.2Z" />
+    <path d="M6.4 10.6v4.2c0 1.6 2.5 2.9 5.6 2.9s5.6-1.3 5.6-2.9v-4.2" />
+    <path d="M20.6 9.4v5.2" />
+  </Icon>
+);
