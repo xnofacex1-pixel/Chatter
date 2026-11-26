@@ -207,6 +207,22 @@ export default function OwnerConsole() {
   const [auditQuery, setAuditQuery] = useState('');
   const [auditError, setAuditError] = useState<string | null>(null);
 
+  const [channels, setChannels] = useState<AdminChannel[]>([]);
+  const [channelQuery, setChannelQuery] = useState('');
+  const [channelsTotal, setChannelsTotal] = useState(0);
+  const [channelsError, setChannelsError] = useState<string | null>(null);
+
+  const [messages, setMessages] = useState<AdminMessage[]>([]);
+  const [messageQuery, setMessageQuery] = useState('');
+  const [messagesTotal, setMessagesTotal] = useState(0);
+  const [messagesError, setMessagesError] = useState<string | null>(null);
+
+  const [moderation, setModeration] = useState<PlatformModerationEntry[]>([]);
+  const [moderationQuery, setModerationQuery] = useState('');
+  const [moderationError, setModerationError] = useState<string | null>(null);
+
+  const [emailConfigured, setEmailConfigured] = useState<boolean | null>(null);
+
   const [confirm, setConfirm] = useState<ConfirmTarget | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -302,15 +318,50 @@ export default function OwnerConsole() {
     }
   }, []);
 
+  const loadChannels = useCallback(async (query: string) => {
+    try {
+      setChannelsError(null);
+      const result = await adminApi.channels(query);
+      setChannels(result.channels);
+      setChannelsTotal(result.total);
+    } catch (error) {
+      setChannelsError(errorMessage(error, 'Channel data is unavailable right now.'));
+    }
+  }, []);
+
+  const loadMessages = useCallback(async (query: string) => {
+    try {
+      setMessagesError(null);
+      const result = await adminApi.messages(query);
+      setMessages(result.messages);
+      setMessagesTotal(result.total);
+    } catch (error) {
+      setMessagesError(errorMessage(error, 'Message data is unavailable right now.'));
+    }
+  }, []);
+
+  const loadModeration = useCallback(async (query: string) => {
+    try {
+      setModerationError(null);
+      const result = await adminApi.moderation(query);
+      setModeration(result.entries);
+    } catch (error) {
+      setModerationError(errorMessage(error, 'Moderation history is unavailable right now.'));
+    }
+  }, []);
+
   useEffect(() => {
     if (!isOwner) return;
     if (tab === 'overview') void loadOverview();
     if (tab === 'users') void loadUsers(userQuery);
     if (tab === 'servers') void loadServers(serverQuery);
+    if (tab === 'channels') void loadChannels(channelQuery);
+    if (tab === 'messages') void loadMessages(messageQuery);
     if (tab === 'staff') void loadStaff();
     if (tab === 'reports') void loadReports(reportStatus);
     if (tab === 'settings') void loadSettings();
     if (tab === 'audit') void loadAudit(auditQuery);
+    if (tab === 'moderation') void loadModeration(moderationQuery);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, isOwner, reportStatus]);
 
@@ -322,9 +373,12 @@ export default function OwnerConsole() {
       if (tab === 'overview') await loadOverview();
       if (tab === 'users') await loadUsers(userQuery);
       if (tab === 'servers') await loadServers(serverQuery);
+      if (tab === 'channels') await loadChannels(channelQuery);
+      if (tab === 'messages') await loadMessages(messageQuery);
       if (tab === 'staff') await loadStaff();
       if (tab === 'reports') await loadReports(reportStatus);
       if (tab === 'audit') await loadAudit(auditQuery);
+      if (tab === 'moderation') await loadModeration(moderationQuery);
     } catch (error) {
       toast.error('Action failed', errorMessage(error, 'The action could not be completed.'));
     } finally {
