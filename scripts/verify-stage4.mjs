@@ -166,12 +166,16 @@ try {
   const bobUser = await register(bob, 'callbob');
   await register(outsider, 'calloutsider');
 
+  // Registration payloads nest the account under `user`; tolerate a flat shape too.
+  const aliceId = aliceUser?.user?.id ?? aliceUser?.id;
+  const bobId = bobUser?.user?.id ?? bobUser?.id;
+
   const aliceStream = await openStream(alice);
   const bobStream = await openStream(bob);
 
   const dm = await alice.req('/api/conversations', {
     method: 'POST',
-    body: { userId: bobUser?.user?.id },
+    body: { kind: 'dm', userId: bobId },
   });
   const conversationId = dm.json?.conversation?.id;
   check(Boolean(conversationId), 'direct conversation created', `status ${dm.status} ${dm.text.slice(0, 120)}`);
@@ -189,7 +193,7 @@ try {
 
   const incoming = await bobStream.waitFor('call:incoming', (data) => data?.call?.id === callId);
   check(Boolean(incoming), 'callee receives an incoming-call event');
-  check(incoming?.call?.participants?.some((entry) => entry.userId === bobUser?.user?.id), 'callee is invited to the call');
+  check(incoming?.call?.participants?.some((entry) => entry.userId === bobId), 'callee is invited to the call');
 
   const outsiderRead = await outsider.req(`/api/calls/${callId}`);
   check(outsiderRead.status === 404, 'outsider cannot read the call', `status ${outsiderRead.status}`);
@@ -208,18 +212,18 @@ try {
   const offer = { type: 'offer', sdp: 'v=0\r\no=- 1 1 IN IP4 127.0.0.1\r\n' };
   const sentOffer = await bob.req(`/api/calls/${callId}/signal`, {
     method: 'POST',
-    body: { to: aliceUser?.user?.id, data: offer },
+    body: { to: aliceId, data: offer },
   });
   check(sentOffer.status === 200, 'offer is accepted for relay', `status ${sentOffer.status} ${sentOffer.text.slice(0, 120)}`);
 
   const relayed = await aliceStream.waitFor('call:signal', (data) => data?.callId === callId);
   check(Boolean(relayed), 'peer receives the relayed offer');
   check(relayed?.data?.sdp === offer.sdp, 'relayed session description is intact');
-  check(relayed?.from === bobUser?.user?.id, 'relayed signal identifies the sender');
+  check(relayed?.from === bobId, 'relayed signal identifies the sender');
 
   const iceSent = await alice.req(`/api/calls/${callId}/signal`, {
     method: 'POST',
-    body: { to: bobUser?.user?.id, data: { type: 'ice', candidate: { candidate: 'candidate:1 1 udp 1 127.0.0.1 5000 typ host' } } },
+    body: { to: bobId, data: { type: 'ice', candidate: { candidate: 'candidate:1 1 udp 1 127.0.0.1 5000 typ host' } } },
   });
   check(iceSent.status === 200, 'ICE candidate is accepted');
 
@@ -231,13 +235,13 @@ try {
 
   const badType = await bob.req(`/api/calls/${callId}/signal`, {
     method: 'POST',
-    body: { to: aliceUser?.user?.id, data: { type: 'sneaky' } },
+    body: { to: aliceId, data: { type: 'sneaky' } },
   });
   check(badType.status === 400, 'unsupported signal types are rejected', `status ${badType.status}`);
 
   const badSdp = await bob.req(`/api/calls/${callId}/signal`, {
     method: 'POST',
-    body: { to: aliceUser?.user?.id, data: { type: 'offer' } },
+    body: { to: aliceId, data: { type: 'offer' } },
   });
   check(badSdp.status === 400, 'offer without a session description is rejected', `status ${badSdp.status}`);
 
@@ -248,7 +252,7 @@ try {
   });
   check(stateChange.status === 200, 'media state update accepted', `status ${stateChange.status}`);
   const sawState = await bobStream.waitFor('call:updated', (data) => {
-    const me = data?.call?.participants?.find((entry) => entry.userId === aliceUser?.user?.id);
+    const me = data?.call?.participants?.find((entry) => entry.userId === aliceId);
     return Boolean(me?.micMuted && me?.screenOn);
   });
   check(Boolean(sawState), 'peers see mute and screen-share changes');
