@@ -442,3 +442,27 @@ CREATE TABLE IF NOT EXISTS reports (
   resolved_at     TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_reports_status ON reports (status, created_at DESC);
+
+-- ---------------------------------------------------------------------------
+-- Stage 8: Chatter AI (Groq). Conversations are private to their owner.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS ai_conversations (
+  id         TEXT PRIMARY KEY,
+  user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title      TEXT NOT NULL DEFAULT 'New chat',
+  model      TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ai_conversations_user ON ai_conversations (user_id, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS ai_messages (
+  id              TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL REFERENCES ai_conversations(id) ON DELETE CASCADE,
+  role            TEXT NOT NULL,
+  content         TEXT NOT NULL,
+  model           TEXT,
+  created_at      TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ai_messages_conversation ON ai_messages (conversation_id, created_at);
