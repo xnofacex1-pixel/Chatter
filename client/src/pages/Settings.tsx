@@ -85,6 +85,134 @@ export default function Settings() {
     </AppShell>
   );
 
+  function HelpSection() {
+    const [progress, setProgress] = useState<TutorialProgress | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [busy, setBusy] = useState(false);
+
+    useEffect(() => {
+      let cancelled = false;
+      tutorialApi
+        .get()
+        .then((result) => {
+          if (!cancelled) setProgress(result.progress);
+        })
+        .catch(() => {
+          if (!cancelled) setError('Chatter could not load your tutorial progress.');
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, []);
+
+    const reset = async () => {
+      try {
+        setBusy(true);
+        const result = await tutorialApi.save({ completedLessons: [], completed: false, lastLesson: null });
+        setProgress(result.progress);
+        toast.success('Tutorial reset', 'You can replay the guided tour whenever you like.');
+      } catch {
+        toast.error('Tutorial progress could not be reset', 'Check your connection and try again.');
+      } finally {
+        setBusy(false);
+      }
+    };
+
+    const done = progress?.completedLessons.length ?? 0;
+    const total = progress?.totalLessons ?? 0;
+    const percent = total > 0 ? Math.round((done / total) * 100) : 0;
+
+    return (
+      <div className="stack" style={{ gap: 16 }}>
+        <section className="card card-pad stack">
+          <div style={{ fontWeight: 650 }}>Guided tutorial</div>
+          <p className="small muted" style={{ margin: 0 }}>
+            Eleven short lessons cover your dashboard, profile, friends, messages, servers, channels, voice and video,
+            notifications, Chatter AI, support tickets and safety.
+          </p>
+          {error ? (
+            <p className="form-error">{error}</p>
+          ) : (
+            <div className="stack" style={{ gap: 6 }}>
+              <div className="row-between small">
+                <span className="muted">Lessons completed</span>
+                <span className="badge">{loading ? 'Loading…' : `${done} / ${total}`}</span>
+              </div>
+              <div style={{ height: 6, borderRadius: 999, background: 'var(--bg-raised)', overflow: 'hidden' }}>
+                <div
+                  style={{
+                    height: '100%',
+                    width: `${percent}%`,
+                    background: 'var(--accent-500)',
+                    transition: 'width 220ms ease',
+                  }}
+                />
+              </div>
+              {progress?.completedAt && (
+                <p className="tiny" style={{ margin: 0, color: 'var(--accent-300)' }}>
+                  Tutorial completed — you can replay any lesson at any time.
+                </p>
+              )}
+            </div>
+          )}
+          <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+            <button type="button" className="btn btn-primary btn-sm" onClick={() => navigate('/tutorial')}>
+              {done > 0 ? 'Continue tutorial' : 'Start tutorial'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={() => void reset()}
+              disabled={busy || loading || done === 0}
+            >
+              {busy ? 'Resetting…' : 'Reset progress'}
+            </button>
+            <Link className="btn btn-ghost btn-sm" to="/support">
+              Support tickets
+            </Link>
+          </div>
+        </section>
+
+        <section className="card card-pad stack">
+          <div style={{ fontWeight: 650 }}>Need a hand?</div>
+          <div className="help-grid">
+            <div className="help-card">
+              <h4>Contact support</h4>
+              <p>Open a ticket with a category and priority. Staff replies appear in the same thread.</p>
+              <div className="help-card-actions">
+                <Link className="btn btn-ghost btn-sm" to="/support">
+                  Open a ticket
+                </Link>
+              </div>
+            </div>
+            <div className="help-card">
+              <h4>Call and voice sounds</h4>
+              <p>Turn individual call, voice and screen-sharing sounds on or off and set their volume.</p>
+              <div className="help-card-actions">
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setTab('sounds')}>
+                  Sound settings
+                </button>
+              </div>
+            </div>
+            <div className="help-card">
+              <h4>Privacy and safety</h4>
+              <p>Control who can message you, manage blocked accounts and review read receipts.</p>
+              <div className="help-card-actions">
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setTab('privacy')}>
+                  Privacy settings
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   function AccountSection() {
     const [form, setForm] = useState({
       username: user?.username ?? '',
