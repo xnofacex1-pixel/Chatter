@@ -36,6 +36,8 @@ type ShellProps = {
 
 const railLinks = [
   { to: '/', label: 'Home', icon: IconHome },
+  { to: '/messages', label: 'Messages', icon: IconMessage },
+  { to: '/friends', label: 'Friends', icon: IconUsers },
   { to: '/members', label: 'Members', icon: IconUsers },
   { to: '/profile', label: 'My profile', icon: IconUser },
   { to: '/settings', label: 'Settings', icon: IconSettings },
@@ -247,7 +249,7 @@ function UserPanel({
 }
 
 /** Sidebar used across the Stage 1 screens. */
-export function DefaultSidebar({ active }: { active: 'home' | 'members' | 'profile' | 'settings' | 'owner' }) {
+export function DefaultSidebar({ active }: { active: 'home' | 'messages' | 'friends' | 'members' | 'profile' | 'settings' | 'owner' }) {
   const { user } = useAuth();
   return (
     <>
@@ -261,6 +263,12 @@ export function DefaultSidebar({ active }: { active: 'home' | 'members' | 'profi
         <div className="nav-section-label">Workspace</div>
         <NavLink to="/" className="nav-item" data-active={active === 'home'}>
           <IconHome size={17} /> Home
+        </NavLink>
+        <NavLink to="/messages" className="nav-item" data-active={active === 'messages'}>
+          <IconMessage size={17} /> Direct messages
+        </NavLink>
+        <NavLink to="/friends" className="nav-item" data-active={active === 'friends'}>
+          <IconUsers size={17} /> Friends
         </NavLink>
         <NavLink to="/members" className="nav-item" data-active={active === 'members'}>
           <IconUsers size={17} /> Members
@@ -281,10 +289,6 @@ export function DefaultSidebar({ active }: { active: 'home' | 'members' | 'profi
         )}
 
         <div className="nav-section-label">Roadmap</div>
-        <div className="nav-item" style={{ opacity: 0.55, cursor: 'default' }} title="Direct messages arrive in Stage 2">
-          <IconMessage size={17} /> Direct messages
-          <span className="nav-count">Stage 2</span>
-        </div>
         <div className="nav-item" style={{ opacity: 0.55, cursor: 'default' }} title="Servers and channels arrive in Stage 3">
           <IconCompass size={17} /> Discover servers
           <span className="nav-count">Stage 3</span>
