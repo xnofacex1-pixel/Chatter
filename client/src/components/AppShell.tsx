@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
+import { notificationsApi } from '../lib/notifications';
+import { useRealtime } from '../lib/realtime';
 import { api, type User } from '../lib/api';
 import { presenceLabel } from '../lib/format';
 import { Avatar, OwnerBadge } from './Avatar';
@@ -252,6 +254,35 @@ function UserPanel({
 /** Sidebar used across the Stage 1 screens. */
 export function DefaultSidebar({ active }: { active: 'home' | 'messages' | 'friends' | 'members' | 'profile' | 'settings' | 'owner' }) {
   const { user } = useAuth();
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = () => {
+      notificationsApi
+        .unread()
+        .then((result) => {
+          if (!cancelled) setUnread(result.unread);
+        })
+        .catch(() => {
+          // A failed badge refresh is cosmetic; the notification page reports errors.
+        });
+    };
+    load();
+    const timer = setInterval(load, 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, []);
+
+  useRealtime((event) => {
+    if (event !== 'notification') return;
+    notificationsApi
+      .unread()
+      .then((result) => setUnread(result.unread))
+      .catch(() => undefined);
+  });
   return (
     <>
       <div className="sidebar-head">
@@ -287,15 +318,14 @@ export function DefaultSidebar({ active }: { active: 'home' | 'messages' | 'frie
           </NavLink>
         )}
 
-        <div className="nav-section-label">Roadmap</div>
-        <div className="nav-item" style={{ opacity: 0.55, cursor: 'default' }} title="Servers and channels arrive in Stage 3">
+        <div className="nav-section-label">Platform</div>
+        <NavLink to="/servers" className="nav-item">
           <IconCompass size={17} /> Discover servers
-          <span className="nav-count">Stage 3</span>
-        </div>
-        <div className="nav-item" style={{ opacity: 0.55, cursor: 'default' }} title="Notifications arrive in Stage 6">
+        </NavLink>
+        <NavLink to="/notifications" className="nav-item">
           <IconBell size={17} /> Notifications
-          <span className="nav-count">Stage 6</span>
-        </div>
+          {unread > 0 && <span className="nav-count">{unread > 99 ? '99+' : unread}</span>}
+        </NavLink>
       </div>
     </>
   );
