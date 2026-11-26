@@ -36,6 +36,7 @@ type ShellProps = {
 
 const railLinks = [
   { to: '/', label: 'Home', icon: IconHome },
+  { to: '/servers', label: 'Communities', icon: IconCompass },
   { to: '/messages', label: 'Messages', icon: IconMessage },
   { to: '/friends', label: 'Friends', icon: IconUsers },
   { to: '/members', label: 'Members', icon: IconUsers },
