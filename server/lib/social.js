@@ -213,6 +213,41 @@ export function conversationSummary(row, viewerId) {
   };
 }
 
+export function pollFor(messageId, viewerId) {
+  const poll = db.prepare('SELECT * FROM message_polls WHERE message_id = ?').get(messageId);
+  if (!poll) return null;
+  const options = db
+    .prepare('SELECT * FROM message_poll_options WHERE message_id = ? ORDER BY position ASC')
+    .all(messageId);
+  const votes = db
+    .prepare('SELECT option_id, user_id FROM message_poll_votes WHERE message_id = ?')
+    .all(messageId);
+
+  const counts = new Map();
+  const mine = [];
+  for (const vote of votes) {
+    counts.set(vote.option_id, (counts.get(vote.option_id) || 0) + 1);
+    if (vote.user_id === viewerId) mine.push(vote.option_id);
+  }
+  const totalVotes = votes.length;
+
+  return {
+    question: poll.question,
+    multiple: Boolean(poll.multiple),
+    totalVotes,
+    myOptionIds: mine,
+    options: options.map((option) => {
+      const count = counts.get(option.id) || 0;
+      return {
+        id: option.id,
+        label: option.label,
+        votes: count,
+        percent: totalVotes === 0 ? 0 : Math.round((count / totalVotes) * 100),
+      };
+    }),
+  };
+}
+
 export function messageFor(row, viewerId) {
   if (!row) return null;
   const author = userRow(row.author_id);
@@ -244,6 +279,12 @@ export function messageFor(row, viewerId) {
   const reply = row.reply_to_id ? db.prepare('SELECT * FROM messages WHERE id = ?').get(row.reply_to_id) : null;
   const replyAuthor = reply ? userRow(reply.author_id) : null;
 
+  const threadReplyCount = row.thread_root_id
+    ? 0
+    : db
+        .prepare('SELECT COUNT(*) AS total FROM messages WHERE thread_root_id = ? AND deleted_at IS NULL')
+        .get(row.id).total;
+
   return {
     id: row.id,
     conversationId: row.conversation_id,
@@ -252,6 +293,9 @@ export function messageFor(row, viewerId) {
     editedAt: row.edited_at,
     deletedAt: row.deleted_at,
     pinnedAt: row.pinned_at,
+    threadRootId: row.thread_root_id || null,
+    threadReplyCount,
+    poll: row.deleted_at ? null : pollFor(row.id, viewerId),
     author: author ? publicUser(author) : null,
     attachments,
     reactions: [...grouped.values()],
