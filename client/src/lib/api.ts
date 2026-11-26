@@ -192,8 +192,37 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   return data as T;
 }
 
+export type AiStatus = {
+  provider: 'groq';
+  configured: boolean;
+  model: string;
+  defaultModel: string;
+  streaming: boolean;
+  limits: { maxContent: number; maxHistory: number; maxConversations: number };
+};
+
+export type AiConversation = {
+  id: string;
+  title: string;
+  model: string | null;
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
+  preview: string | null;
+};
+
+export type AiMessage = {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  createdAt: string;
+};
+
 export const api = {
-  health: () => request<{ status: string; database: string; mailConfigured: boolean }>('/api/health'),
+  health: () =>
+    request<{ status: string; database: string; mailConfigured: boolean; aiConfigured?: boolean; aiProvider?: string }>(
+      '/api/health',
+    ),
 
   session: () => request<{ user: User | null; settings: Settings | null }>('/api/auth/session'),
   register: (input: { email: string; username: string; displayName?: string; password: string }) =>
@@ -334,5 +363,16 @@ export const api = {
     const formData = new FormData();
     formData.append('file', file);
     return request<{ attachment: AttachmentUpload }>('/api/attachments', { method: 'POST', formData });
+  },
+
+  ai: {
+    status: () => request<AiStatus>('/api/ai/status'),
+    conversations: () => request<{ conversations: AiConversation[] }>('/api/ai/conversations'),
+    createConversation: (title?: string) =>
+      request<{ conversation: AiConversation }>('/api/ai/conversations', { method: 'POST', body: { title } }),
+    conversation: (id: string) =>
+      request<{ conversation: AiConversation; messages: AiMessage[] }>(`/api/ai/conversations/${id}`),
+    deleteConversation: (id: string) =>
+      request<{ ok: boolean }>(`/api/ai/conversations/${id}`, { method: 'DELETE' }),
   },
 };

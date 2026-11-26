@@ -90,6 +90,8 @@ app.get('/api/health', (_req, res) => {
     app: 'Chatter',
     database,
     mailConfigured: Boolean(process.env.RESEND_API_KEY),
+    aiConfigured: Boolean((process.env.GROQ_API_KEY || '').trim()),
+    aiProvider: 'groq',
     time: new Date().toISOString(),
   });
 });
@@ -109,6 +111,7 @@ app.use('/api/invites', invitesRouter);
 app.use('/api/calls', callsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/notifications', notificationsRouter);
+app.use('/api/ai', aiRouter);
 
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: { code: 'not_found', message: 'That endpoint does not exist.' } });
