@@ -47,17 +47,6 @@ function layout(title, body, cta) {
   </div></body></html>`;
 }
 
-export async function sendVerificationEmail(user, token) {
-  const url = `${appUrl()}/verify-email?token=${encodeURIComponent(token)}`;
-  const result = await sendMail({
-    to: user.email,
-    subject: 'Verify your Chatter email',
-    html: layout('Confirm your email', 'Welcome to Chatter. Confirm your email address to unlock your account.', { url, label: 'Verify email' }),
-    text: `Verify your Chatter email: ${url}`,
-  });
-  return { ...result, url };
-}
-
 export async function sendPasswordResetEmail(user, token) {
   const url = `${appUrl()}/reset-password?token=${encodeURIComponent(token)}`;
   const result = await sendMail({
