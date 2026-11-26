@@ -42,7 +42,7 @@ export type ServerRole = {
   isSystem: boolean;
 };
 
-export type ChannelType = 'text' | 'voice';
+export type ChannelType = 'text' | 'voice' | 'announcement' | 'forum' | 'media';
 
 export type ServerChannel = {
   id: string;
@@ -235,7 +235,7 @@ export const serverApi = {
   deleteChannel: (id: string, channelId: string) =>
     request<{ ok: boolean }>(`/api/servers/${id}/channels/${channelId}`, { method: 'DELETE' }),
   reorderChannels: (id: string, order: { id: string; position: number; categoryId: string | null }[]) =>
-    request<{ ok: boolean }>(`/api/servers/${id}/channels/order`, { method: 'PATCH', body: { order } }),
+    request<{ ok: boolean }>(`/api/servers/${id}/channels/order`, { method: 'PATCH', body: { items: order } }),
   markChannelRead: (id: string, channelId: string) =>
     request<{ ok: boolean; lastReadAt: string }>(`/api/servers/${id}/channels/${channelId}/read`, { method: 'POST', body: {} }),
 

@@ -111,7 +111,7 @@ function createRoleRow(serverId, { name, color = '#8b9bb4', permissions, positio
 function createChannelRow(serverId, data) {
   const id = randomUUID();
   const now = nowIso();
-  const conversationId = data.type === 'text' ? randomUUID() : null;
+  const conversationId = data.type === 'voice' ? null : randomUUID();
   db.prepare(
     `INSERT INTO server_channels
        (id, server_id, category_id, conversation_id, name, type, topic, position,
@@ -1024,7 +1024,7 @@ router.delete(
 
 const channelSchema = z.object({
   name: z.string().trim().min(1).max(48),
-  type: z.enum(['text', 'voice']),
+  type: z.enum(['text', 'voice', 'announcement', 'forum', 'media']),
   categoryId: z.string().nullable().optional(),
   topic: z.string().trim().max(1024).nullable().optional(),
   isPrivate: z.boolean().optional(),
@@ -1068,7 +1068,7 @@ router.post(
       topic: data.topic ?? null,
       position: (highest ?? -1) + 1,
       isPrivate: data.isPrivate ?? false,
-      readOnly: data.readOnly ?? false,
+      readOnly: data.type === 'announcement' ? true : (data.readOnly ?? false),
       slowmodeSeconds: data.slowmodeSeconds ?? 0,
       userLimit: data.type === 'voice' ? (data.userLimit ?? 0) : null,
       createdBy: req.user.id,
