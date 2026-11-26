@@ -6,14 +6,24 @@ import { useToast } from '../components/Toast';
 import { useAuth } from '../lib/auth';
 import { ApiError } from '../lib/api';
 import {
+  IconAt,
   IconBell,
   IconCheck,
   IconClose,
+  IconCrown,
   IconGlobe,
+  IconHeadphones,
+  IconHome,
+  IconInfo,
   IconLock,
+  IconMail,
+  IconMessage,
   IconSearch,
+  IconSettings,
   IconShield,
+  IconSparkle,
   IconTrash,
+  IconUpload,
   IconUsers,
   IconWarning,
 } from '../components/icons';
@@ -24,6 +34,8 @@ import {
   formatUptime,
   formatWhen,
   type AdminAccess,
+  type AdminChannel,
+  type AdminMessage,
   type AdminServer,
   type AdminUser,
   type AppSettings,
@@ -441,7 +453,24 @@ export default function OwnerConsole() {
     );
   }
 
-  if (!isOwner) {
+  const staffVisible = ROLE_FOR_SECTION[section]
+    ? staff.filter((entry) => entry.role === ROLE_FOR_SECTION[section])
+    : staff;
+  const auditVisible =
+    section === 'security-events'
+      ? audit.filter((entry) => /login|password|session|owner|verify|blocked/.test(entry.action))
+      : section === 'admin-actions'
+        ? audit.filter((entry) => entry.action.startsWith('admin.'))
+        : audit;
+  const staffTitle =
+    section === 'administrators'
+      ? 'Administrators'
+      : section === 'moderators'
+        ? 'Moderators'
+        : section === 'support'
+          ? 'Support staff'
+          : 'Current staff';
+
     return (
       <AppShell title="Owner console" subtitle="Restricted area">
         <div className="owner-denied">
@@ -478,23 +507,34 @@ export default function OwnerConsole() {
           </p>
         </section>
 
-        <div className="owner-tabs" role="tablist" aria-label="Owner console sections">
-          {tabs.map((entry) => (
-            <button
-              key={entry.id}
-              type="button"
-              role="tab"
-              aria-selected={tab === entry.id}
-              className="owner-tab"
-              data-active={tab === entry.id}
-              onClick={() => setTab(entry.id)}
-            >
-              {entry.label}
-            </button>
-          ))}
-        </div>
+        <div className="owner-layout">
+          <nav className="owner-nav" aria-label="Owner console sections">
+            {navGroups.map((group) => (
+              <div key={group.label} className="owner-nav-group">
+                <span className="owner-nav-label">{group.label}</span>
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="owner-nav-item"
+                      data-active={section === item.id}
+                      aria-current={section === item.id ? 'page' : undefined}
+                      onClick={() => setSection(item.id)}
+                    >
+                      <Icon size={16} />
+                      <span className="grow">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+          </nav>
 
-        {tab === 'overview' && (
+          <div className="owner-content">
+
+        {section === 'dashboard' && (
           <>
             {overviewError && (
               <div className="call-error-inline" role="alert">
