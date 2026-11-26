@@ -158,7 +158,7 @@ export default function Ai() {
       setMessages([]);
       setError(null);
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Could not start a new chat.', 'error');
+      toast.error('Chatter AI', err instanceof ApiError ? err.message : 'Could not start a new chat.');
     }
   }
 
@@ -171,7 +171,7 @@ export default function Ai() {
         return next;
       });
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Could not delete that chat.', 'error');
+      toast.error('Chatter AI', err instanceof ApiError ? err.message : 'Could not delete that chat.');
     }
   }
 
@@ -191,7 +191,7 @@ export default function Ai() {
         setActiveId(created.conversation.id);
       }
     } catch (err) {
-      toast.push(err instanceof ApiError ? err.message : 'Could not start a new chat.', 'error');
+      toast.error('Chatter AI', err instanceof ApiError ? err.message : 'Could not start a new chat.');
       return;
     }
 

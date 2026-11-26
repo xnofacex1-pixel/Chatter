@@ -20,10 +20,10 @@ export default function ProfileView() {
     <AppShell
       title={user ? user.displayName : 'Profile'}
       subtitle={user ? `@${user.username}` : 'Member profile'}
-      sidebar={<DefaultSidebar active="members" />}
+      sidebar={<DefaultSidebar active="friends" />}
       headActions={
-        <Link className="btn btn-ghost btn-sm" to="/members">
-          <IconChevronLeft size={15} /> Members
+        <Link className="btn btn-ghost btn-sm" to="/friends">
+          <IconChevronLeft size={15} /> Friends
         </Link>
       }
     >
