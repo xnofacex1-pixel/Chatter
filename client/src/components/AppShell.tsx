@@ -24,7 +24,7 @@ import {
   IconShield,
   IconUser,
   IconUsers,
-  IconX,
+  IconClose,
 } from './icons';
 import { useToast } from './Toast';
 
@@ -262,7 +262,7 @@ export function AppShell({ children, title, subtitle, sidebar, members, headActi
               <span className="sidebar-title">Chatter</span>
             </span>
             <button type="button" className="icon-btn" aria-label="Close navigation" onClick={() => setSidebarOpen(false)}>
-              <IconX size={18} />
+              <IconClose size={18} />
             </button>
           </div>
           {sidebar}
@@ -342,7 +342,7 @@ export function AppShell({ children, title, subtitle, sidebar, members, headActi
               aria-label="Hide members"
               onClick={() => setMembersOpen(false)}
             >
-              <IconX size={17} />
+              <IconClose size={17} />
             </button>
           </div>
           <div className="members-scroll">{members}</div>

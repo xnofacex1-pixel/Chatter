@@ -116,3 +116,10 @@ export const IconPin = (p: IconProps) => (
 export const IconAt = (p: IconProps) => (
   <Icon {...p}><circle cx="12" cy="12" r="4" /><path d="M16 8v4.6a2.9 2.9 0 0 0 5.6 1.2A9.2 9.2 0 1 0 18.6 19" /></Icon>
 );
+
+export const IconPanelRight = (props: IconProps) => (
+  <Icon {...props}>
+    <rect x="3" y="4" width="18" height="16" rx="2.5" />
+    <path d="M15 4v16" />
+  </Icon>
+);
