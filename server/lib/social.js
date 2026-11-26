@@ -1,6 +1,41 @@
 import { db } from '../db.js';
 import { fail } from './http.js';
 import { publicUser } from './presenters.js';
+import { P, channelPermissions, memberRow, serverMemberIds } from './server-perms.js';
+
+/** Channel conversations live inside a server and are gated by channel permissions. */
+export function channelForConversation(conversationId) {
+  return (
+    db
+      .prepare('SELECT c.*, s.name AS server_name FROM server_channels c JOIN servers s ON s.id = c.server_id WHERE c.conversation_id = ?')
+      .get(conversationId) ?? null
+  );
+}
+
+function channelMembership(row, userId) {
+  const channel = channelForConversation(row.id);
+  if (!channel) fail(404, 'conversation_not_found', 'That conversation does not exist.');
+  const member = memberRow(channel.server_id, userId);
+  if (!member) fail(404, 'conversation_not_found', 'That conversation does not exist.');
+  const permissions = channelPermissions(channel.server_id, userId, channel.id);
+  if (!(permissions & P.VIEW_CHANNEL)) {
+    fail(404, 'conversation_not_found', 'That conversation does not exist.');
+  }
+  const read = db
+    .prepare('SELECT last_read_at FROM channel_reads WHERE channel_id = ? AND user_id = ?')
+    .get(channel.id, userId);
+  return {
+    conversation_id: row.id,
+    user_id: userId,
+    role: 'member',
+    joined_at: member.joined_at,
+    last_read_at: read?.last_read_at ?? null,
+    muted: 0,
+    archived: 0,
+    channel,
+    permissions,
+  };
+}
 
 export const userRow = (id) => (id ? db.prepare('SELECT * FROM users WHERE id = ?').get(id) : null);
 export const friendPair = (a, b) => (a < b ? [a, b] : [b, a]);
@@ -67,6 +102,9 @@ export function requireConversation(conversationId) {
 
 /** Throws 404 (not 403) so outsiders cannot probe which conversations exist. */
 export function requireMembership(conversationId, userId) {
+  const conversation = db.prepare('SELECT * FROM conversations WHERE id = ?').get(conversationId);
+  if (!conversation) fail(404, 'conversation_not_found', 'That conversation does not exist.');
+  if (conversation.kind === 'channel') return channelMembership(conversation, userId);
   const row = membership(conversationId, userId);
   if (!row) fail(404, 'conversation_not_found', 'That conversation does not exist.');
   return row;
@@ -92,6 +130,7 @@ function messagePreview(row) {
 }
 
 export function conversationSummary(row, viewerId) {
+  if (row.kind === 'channel') return channelConversationSummary(row, viewerId);
   const members = conversationMemberRows(row.id);
   const me = members.find((member) => member.user_id === viewerId);
   const partnerRow = row.kind === 'dm' ? members.find((member) => member.user_id !== viewerId) : null;
@@ -176,5 +215,14 @@ export function messageFor(row, viewerId) {
 }
 
 export function conversationAudience(row) {
-  return conversationMemberRows(row.id).map((member) => member.user_id);
+  const full = row.kind ? row : db.prepare('SELECT * FROM conversations WHERE id = ?').get(row.id);
+  if (full?.kind === 'channel') {
+    const channel = channelForConversation(full.id);
+    if (!channel) return [];
+    // Only members who can actually view the channel receive its events.
+    return serverMemberIds(channel.server_id).filter(
+      (userId) => channelPermissions(channel.server_id, userId, channel.id) & P.VIEW_CHANNEL,
+    );
+  }
+  return conversationMemberRows(full.id).map((member) => member.user_id);
 }

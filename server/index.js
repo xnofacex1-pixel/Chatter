@@ -12,6 +12,8 @@ import { router as friendsRouter } from './routes/friends.js';
 import { router as conversationsRouter, messagesRouter } from './routes/conversations.js';
 import { router as attachmentsRouter } from './routes/attachments.js';
 import { router as realtimeRouter } from './routes/realtime.js';
+import { router as serversRouter } from './routes/servers.js';
+import { router as invitesRouter } from './routes/invites.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -98,6 +100,8 @@ app.use('/api/conversations', conversationsRouter);
 app.use('/api/messages', messagesRouter);
 app.use('/api/attachments', attachmentsRouter);
 app.use('/api/realtime', realtimeRouter);
+app.use('/api/servers', serversRouter);
+app.use('/api/invites', invitesRouter);
 
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: { code: 'not_found', message: 'That endpoint does not exist.' } });
