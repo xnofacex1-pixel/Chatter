@@ -129,6 +129,57 @@ function messagePreview(row) {
   };
 }
 
+function channelConversationSummary(row, viewerId) {
+  const channel = channelForConversation(row.id);
+  if (!channel) {
+    return { id: row.id, kind: 'channel', title: null, unreadCount: 0, members: [], memberCount: 0 };
+  }
+  const permissions = memberRow(channel.server_id, viewerId)
+    ? channelPermissions(channel.server_id, viewerId, channel.id)
+    : 0;
+  const read = db
+    .prepare('SELECT last_read_at FROM channel_reads WHERE channel_id = ? AND user_id = ?')
+    .get(channel.id, viewerId);
+  const last = db
+    .prepare('SELECT * FROM messages WHERE conversation_id = ? ORDER BY created_at DESC, id DESC LIMIT 1')
+    .get(row.id);
+  const unread = db
+    .prepare(
+      `SELECT COUNT(*) AS total FROM messages
+        WHERE conversation_id = ? AND deleted_at IS NULL AND author_id <> ? AND created_at > ?`,
+    )
+    .get(row.id, viewerId, read?.last_read_at || '1970-01-01T00:00:00.000Z').total;
+  const memberCount = db
+    .prepare('SELECT COUNT(*) AS total FROM server_members WHERE server_id = ?')
+    .get(channel.server_id).total;
+
+  return {
+    id: row.id,
+    kind: 'channel',
+    title: channel.name,
+    serverId: channel.server_id,
+    serverName: channel.server_name,
+    channelId: channel.id,
+    channelType: channel.type,
+    topic: channel.topic,
+    readOnly: Boolean(channel.read_only),
+    slowmodeSeconds: channel.slowmode_seconds,
+    iconUrl: null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    lastMessageAt: row.last_message_at,
+    muted: false,
+    archived: false,
+    unreadCount: unread,
+    memberCount,
+    members: [],
+    partner: null,
+    canSend: Boolean(permissions & P.SEND_MESSAGES),
+    canManage: Boolean(permissions & P.MANAGE_CHANNELS),
+    lastMessage: messagePreview(last),
+  };
+}
+
 export function conversationSummary(row, viewerId) {
   if (row.kind === 'channel') return channelConversationSummary(row, viewerId);
   const members = conversationMemberRows(row.id);
