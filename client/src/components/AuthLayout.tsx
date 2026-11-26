@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { LogoMark } from './Logo';
-import { IconAt, IconLock, IconShield, IconSparkle, IconUsers } from './icons';
+import { IconShield, IconSparkle, IconUsers } from './icons';
 
 const features = [
   { icon: IconSparkle, title: 'Built for real conversation', body: 'Live messaging, presence and community spaces that feel instant.' },
@@ -73,14 +73,5 @@ export function AuthLayout({
         </div>
       </div>
     </div>
-  );
-}
-
-export function AuthIcons() {
-  return (
-    <>
-      <IconAt size={0} />
-      <IconLock size={0} />
-    </>
   );
 }

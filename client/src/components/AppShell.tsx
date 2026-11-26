@@ -83,17 +83,12 @@ export function AppShell({ children, title, subtitle, sidebar, members, headActi
             key={link.to}
             to={link.to}
             end={link.to === '/'}
-            className="rail-btn"
+            className={({ isActive }) => `rail-btn${isActive ? ' rail-btn-active' : ''}`}
             aria-label={link.label}
+            title={link.label}
           >
-            {({ isActive }) => (
-              <>
-                <span data-active={isActive ? 'true' : 'false'} style={{ display: 'contents' }}>
-                  <link.icon size={20} />
-                </span>
-                <span className="rail-tip">{link.label}</span>
-              </>
-            )}
+            <link.icon size={20} />
+            <span className="rail-tip">{link.label}</span>
           </NavLink>
         ))}
         {user.isOwner && (
@@ -184,7 +179,6 @@ export function AppShell({ children, title, subtitle, sidebar, members, headActi
         <aside className="members" aria-label="Members">
           <div className="sidebar-head">
             <span className="sidebar-title">Members</span>
-            <span className="badge">{members ? '' : ''}</span>
           </div>
           <div className="members-scroll">{members}</div>
         </aside>
@@ -292,7 +286,7 @@ export function DefaultSidebar({ active }: { active: 'home' | 'members' | 'profi
           </NavLink>
         )}
 
-        <div className="nav-section-label">Coming next</div>
+        <div className="nav-section-label">Roadmap</div>
         <div className="nav-item" style={{ opacity: 0.55, cursor: 'default' }} title="Direct messages arrive in Stage 2">
           <IconMessage size={17} /> Direct messages
           <span className="nav-count">Stage 2</span>
