@@ -5,6 +5,7 @@ import { db, nowIso } from '../db.js';
 import { clientIp, fail, route } from '../lib/http.js';
 import { publicUser } from '../lib/presenters.js';
 import { rateLimit } from '../lib/rate-limit.js';
+import { P, channelPermissions, has } from '../lib/server-perms.js';
 import { memberIds, publish, publishToConversation } from '../lib/realtime.js';
 import { notifyConversationMessage } from '../lib/notifications.js';
 import { audit } from '../lib/sessions.js';
@@ -372,6 +373,17 @@ router.post(
   rateLimit({ windowMs: 10 * 1000, max: 20, keyPrefix: 'message-send' }),
   route(async (req, res) => {
     requireMembership(req.params.id, req.user.id);
+    // Server channels enforce their own send rules: read-only channels only accept staff posts.
+    const channelRow = db.prepare('SELECT * FROM server_channels WHERE conversation_id = ?').get(req.params.id);
+    if (channelRow) {
+      const permissions = channelPermissions(channelRow.server_id, req.user.id, channelRow.id);
+      if (!has(permissions, P.SEND_MESSAGES)) {
+        return fail(403, 'cannot_send', 'You do not have permission to send messages in this channel.');
+      }
+      if (channelRow.read_only && !has(permissions, P.MANAGE_MESSAGES)) {
+        return fail(403, 'channel_read_only', 'This channel is read-only. Only staff can post here.');
+      }
+    }
     const parsed = sendSchema.safeParse(req.body ?? {});
     if (!parsed.success) return fail(400, 'invalid_input', 'That message could not be sent.');
 
