@@ -13,7 +13,8 @@ export type StaffPermission =
   | 'moderate.messages'
   | 'manage.servers'
   | 'view.reports'
-  | 'view.audit';
+  | 'view.audit'
+  | 'support.tickets';
 
 export interface AdminUser extends User {
   email?: string;
@@ -255,6 +256,7 @@ export const PERMISSION_LABELS: Record<StaffPermission, string> = {
   'manage.servers': 'Manage communities',
   'view.reports': 'Review reports',
   'view.audit': 'View audit log',
+  'support.tickets': 'Manage support tickets',
 };
 
 export const formatWhen = (iso: string | null): string => {

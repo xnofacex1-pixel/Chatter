@@ -26,6 +26,8 @@ import {
   IconUser,
   IconUsers,
   IconClose,
+  IconLifeBuoy,
+  IconGraduationCap,
 } from './icons';
 import { useToast } from './Toast';
 
@@ -40,12 +42,14 @@ type ShellProps = {
 };
 
 const railLinks = [
-  { to: '/', label: 'Home', icon: IconHome },
-  { to: '/servers', label: 'Communities', icon: IconCompass },
-  { to: '/messages', label: 'Messages', icon: IconMessage },
-  { to: '/friends', label: 'Friends', icon: IconUsers },
-  { to: '/ai', label: 'Chatter AI', icon: IconSparkle },
-  { to: '/settings', label: 'Settings', icon: IconSettings },
+  { to: '/', label: 'Home', icon: IconHome, tour: 'nav-home' },
+  { to: '/servers', label: 'Communities', icon: IconCompass, tour: 'nav-servers' },
+  { to: '/messages', label: 'Messages', icon: IconMessage, tour: 'nav-messages' },
+  { to: '/friends', label: 'Friends', icon: IconUsers, tour: 'nav-friends' },
+  { to: '/ai', label: 'Chatter AI', icon: IconSparkle, tour: 'nav-ai' },
+  { to: '/support', label: 'Support', icon: IconLifeBuoy, tour: 'nav-support' },
+  { to: '/tutorial', label: 'Tutorial', icon: IconGraduationCap, tour: 'nav-tutorial' },
+  { to: '/settings', label: 'Settings', icon: IconSettings, tour: 'nav-settings' },
 ];
 
 const tabItems = [
@@ -54,6 +58,7 @@ const tabItems = [
   { to: '/friends', label: 'Friends', icon: IconUsers },
   { to: '/servers', label: 'Servers', icon: IconCompass },
   { to: '/ai', label: 'AI', icon: IconSparkle },
+  { to: '/support', label: 'Support', icon: IconLifeBuoy },
   { to: '/profile', label: 'You', icon: IconUser },
 ];
 
@@ -218,6 +223,7 @@ export function AppShell({ children, title, subtitle, sidebar, members, headActi
               end={link.to === '/'}
               className="rail-btn"
               data-active={active}
+              data-tour={link.tour}
               aria-label={link.label}
               aria-current={active ? 'page' : undefined}
             >
@@ -256,7 +262,7 @@ export function AppShell({ children, title, subtitle, sidebar, members, headActi
       )}
 
       {sidebar && (
-        <aside className="sidebar" aria-label="Section navigation">
+        <aside className="sidebar" aria-label="Section navigation" data-tour="channels-panel">
           <div className="sidebar-sheet-head">
             <span className="row" style={{ gap: 8, alignItems: 'center' }}>
               <LogoMark size={22} />
@@ -407,6 +413,7 @@ function UserPanel({
         type="button"
         onClick={() => setMenuOpen((open) => !open)}
         style={{ background: 'none', border: 0, padding: 0, display: 'flex' }}
+        data-tour="nav-profile"
         aria-label="Open account menu"
         aria-expanded={menuOpen}
       >
@@ -573,7 +580,7 @@ export function DefaultSidebar({
         <NavLink to="/servers" className="nav-item">
           <IconCompass size={17} /> Discover servers
         </NavLink>
-        <NavLink to="/notifications" className="nav-item">
+        <NavLink to="/notifications" className="nav-item" data-tour="nav-notifications">
           <IconBell size={17} /> Notifications
           {unread > 0 && <span className="nav-count">{unread > 99 ? '99+' : unread}</span>}
         </NavLink>

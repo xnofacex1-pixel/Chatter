@@ -6,6 +6,8 @@ import './styles/base.css';
 import './styles/app.css';
 import './styles/stage3.css';
 import './styles/stage6.css';
+import './styles/stage7.css';
+import './tutorial.css';
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Chatter root element is missing');
