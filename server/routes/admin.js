@@ -420,9 +420,10 @@ router.get(
     requireOwner(req);
     const rows = db
       .prepare(
-        `SELECT s.*, u.username, u.display_name, u.avatar_url, u.email, g.display_name AS granted_by_name
+        `SELECT s.*, u.username, u.display_name, u.email, p.avatar_media_id AS avatar_media_id, g.display_name AS granted_by_name
            FROM staff_assignments s
            JOIN users u ON u.id = s.user_id
+           LEFT JOIN user_profiles p ON p.user_id = u.id
            LEFT JOIN users g ON g.id = s.granted_by
           WHERE s.revoked_at IS NULL
           ORDER BY s.created_at DESC`,
@@ -435,7 +436,7 @@ router.get(
         username: row.username,
         displayName: row.display_name,
         email: row.email,
-        avatarUrl: row.avatar_url,
+        avatarUrl: row.avatar_media_id ? `/api/media/${row.avatar_media_id}` : null,
         role: row.role,
         permissions: row.permissions ? JSON.parse(row.permissions) : [],
         grantedBy: row.granted_by_name,
