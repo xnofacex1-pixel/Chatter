@@ -120,7 +120,7 @@ try {
   const makeChannel = async (body, label) => {
     const res = await owner.req(`/api/servers/${serverId}/channels`, { method: 'POST', body });
     check(res.status === 201, label, `status ${res.status} ${res.text.slice(0, 160)}`);
-    return res.json?.channel;
+    return { id: res.json?.channelId, conversationId: res.json?.conversationId };
   };
 
   const announcement = await makeChannel({ name: 'announcements', type: 'announcement' }, 'create announcement channel');
@@ -128,14 +128,21 @@ try {
   const media = await makeChannel({ name: 'screenshots', type: 'media' }, 'create media channel');
   const voice = await makeChannel({ name: 'Stage', type: 'voice' }, 'create voice channel');
 
-  check(announcement?.type === 'announcement', 'announcement channel keeps its type');
-  check(forum?.type === 'forum', 'forum channel keeps its type');
-  check(media?.type === 'media', 'media channel keeps its type');
-  check(Boolean(announcement?.conversationId), 'announcement channel is backed by a conversation');
-  check(Boolean(forum?.conversationId), 'forum channel is backed by a conversation');
-  check(Boolean(media?.conversationId), 'media channel is backed by a conversation');
-  check(!voice?.conversationId, 'voice channel has no conversation');
-  check(announcement?.readOnly === true, 'announcement channel defaults to read-only');
+  // Channel creation returns identifiers only; read the serialised rows from server detail.
+  const ownerChannels = channelsOf(await owner.req(`/api/servers/${serverId}`));
+  const byId = (id) => ownerChannels.find((channel) => channel.id === id);
+  const announcementRow = byId(announcement.id);
+  const forumRow = byId(forum.id);
+  const mediaRow = byId(media.id);
+
+  check(announcementRow?.type === 'announcement', 'announcement channel keeps its type');
+  check(forumRow?.type === 'forum', 'forum channel keeps its type');
+  check(mediaRow?.type === 'media', 'media channel keeps its type');
+  check(Boolean(announcement.conversationId), 'announcement channel is backed by a conversation');
+  check(Boolean(forum.conversationId), 'forum channel is backed by a conversation');
+  check(Boolean(media.conversationId), 'media channel is backed by a conversation');
+  check(!voice.conversationId, 'voice channel has no conversation');
+  check(announcementRow?.readOnly === true, 'announcement channel defaults to read-only');
 
   const invalid = await owner.req(`/api/servers/${serverId}/channels`, {
     method: 'POST',
@@ -159,18 +166,15 @@ try {
   check(memberAnnouncement?.canSend === false, 'ordinary member cannot send in an announcement channel');
   check(memberForum?.canSend === true, 'ordinary member can send in a forum channel');
 
-  const ownerAnnouncement = channelsOf(await owner.req(`/api/servers/${serverId}`)).find(
-    (channel) => channel.id === announcement?.id,
-  );
-  check(ownerAnnouncement?.canSend === true, 'manager can still post in an announcement channel');
+  check(announcementRow?.canSend === true, 'manager can still post in an announcement channel');
 
-  const blockedPost = await member.req(`/api/conversations/${announcement?.conversationId}/messages`, {
+  const blockedPost = await member.req(`/api/conversations/${announcement.conversationId}/messages`, {
     method: 'POST',
     body: { body: 'Announcement attempt' },
   });
   check(blockedPost.status >= 400, 'read-only announcement rejects a member message', `status ${blockedPost.status}`);
 
-  const forumPost = await member.req(`/api/conversations/${forum?.conversationId}/messages`, {
+  const forumPost = await member.req(`/api/conversations/${forum.conversationId}/messages`, {
     method: 'POST',
     body: { body: 'Forum topic idea' },
   });
