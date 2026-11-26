@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import { addDays, addMinutes, db, nowIso, transaction } from '../db.js';
 import { clientIp, fail, route } from '../lib/http.js';
@@ -130,9 +130,7 @@ router.post(
       db.prepare('INSERT INTO user_settings (user_id, updated_at) VALUES (?, ?)').run(userId, createdAt);
     });
 
-    const token = createAuthToken(userId, 'verify', 60 * 24);
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
-    const mail = await sendVerificationEmail(user, token);
 
     const session = createSession(userId, req);
     setSessionCookie(res, session.token, session.expiresAt);
@@ -141,7 +139,6 @@ router.post(
     res.status(201).json({
       user: publicUser(user, { includeEmail: true }),
       settings: settingsFor(userId),
-      verification: verificationDelivery(mail),
     });
   }),
 );
@@ -210,52 +207,74 @@ router.post(
   }),
 );
 
-router.post(
-  '/verify-email',
-  rateLimit({ windowMs: 15 * 60 * 1000, max: 20, keyPrefix: 'verify' }),
+/**
+ * Owner access is granted server-side only, never from a browser-supplied role.
+ * The account must match the configured OWNER_EMAIL and present the deployment's
+ * OWNER_SETUP_CODE, compared in constant time. Existing owner rows are preserved.
+ */
+const OWNER_SETUP_CODE = (process.env.OWNER_SETUP_CODE || '').trim();
+
+router.get(
+  '/owner-claim',
   route(async (req, res) => {
-    const parsed = tokenSchema.safeParse(req.body ?? {});
-    if (!parsed.success) return fail(400, 'invalid_input', 'This verification link is incomplete.');
-    const record = consumeAuthToken(parsed.data.token, 'verify');
-    if (!record) return fail(400, 'invalid_token', 'This verification link is invalid or has expired. Request a new one.');
-
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(record.user_id);
-    if (!user) return fail(400, 'invalid_token', 'This verification link is no longer valid.');
-
-    const now = nowIso();
-    const becomesOwner = user.email === OWNER_EMAIL;
-    db.prepare(
-      `UPDATE users
-          SET email_verified_at = COALESCE(email_verified_at, ?),
-              is_owner = CASE WHEN ? = 1 THEN 1 ELSE is_owner END,
-              title = CASE WHEN ? = 1 THEN COALESCE(title, ?) ELSE title END,
-              display_name = CASE WHEN ? = 1 THEN ? ELSE display_name END,
-              updated_at = ?
-        WHERE id = ?`,
-    ).run(now, becomesOwner ? 1 : 0, becomesOwner ? 1 : 0, OWNER_TITLE, becomesOwner ? 1 : 0, OWNER_DISPLAY_NAME, now, user.id);
-
-    if (becomesOwner) {
-      audit(user.id, 'owner.granted', { targetType: 'user', targetId: user.id, metadata: { email: user.email }, ip: clientIp(req) });
-    }
-    audit(user.id, 'user.email_verified', { targetType: 'user', targetId: user.id, ip: clientIp(req) });
-    const fresh = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
-    res.json({ ok: true, user: publicUser(fresh, { includeEmail: true }), settings: settingsFor(fresh.id) });
+    const found = currentSessionUser(req);
+    if (!found) return res.json({ eligible: false, configured: Boolean(OWNER_SETUP_CODE) });
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(found.session.user_id);
+    res.json({
+      eligible: Boolean(user && user.email === OWNER_EMAIL && !user.is_owner),
+      configured: Boolean(OWNER_SETUP_CODE),
+      isOwner: Boolean(user?.is_owner),
+    });
   }),
 );
 
 router.post(
-  '/resend-verification',
-  rateLimit({ windowMs: 10 * 60 * 1000, max: 5, keyPrefix: 'resend-verify' }),
+  '/owner-claim',
+  rateLimit({ windowMs: 15 * 60 * 1000, max: 8, keyPrefix: 'owner-claim', message: 'Too many attempts. Try again in 15 minutes.' }),
   route(async (req, res) => {
     const found = currentSessionUser(req);
-    if (!found) return fail(401, 'not_authenticated', 'Sign in to request a new verification email.');
+    if (!found) return fail(401, 'not_authenticated', 'Sign in to claim owner access.');
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(found.session.user_id);
-    if (!user) return fail(401, 'not_authenticated', 'Sign in to request a new verification email.');
-    if (user.email_verified_at) return res.json({ ok: true, alreadyVerified: true, emailSent: false });
+    if (!user) return fail(401, 'not_authenticated', 'Sign in to claim owner access.');
+    if (user.email !== OWNER_EMAIL) {
+      return fail(403, 'not_owner_account', 'This account is not the configured owner account.');
+    }
+    if (!OWNER_SETUP_CODE) {
+      return fail(
+        503,
+        'owner_claim_disabled',
+        'Owner claiming is not enabled on this deployment. Add OWNER_SETUP_CODE to the server environment first.',
+      );
+    }
+    const parsed = z.object({ code: z.string().trim().min(4).max(200) }).safeParse(req.body ?? {});
+    if (!parsed.success) return fail(400, 'invalid_input', 'Enter the owner setup code.');
 
-    const token = createAuthToken(user.id, 'verify', 60 * 24);
-    const mail = await sendVerificationEmail(user, token);
-    res.json({ ok: true, alreadyVerified: false, ...verificationDelivery(mail) });
+    const supplied = Buffer.from(parsed.data.code);
+    const expected = Buffer.from(OWNER_SETUP_CODE);
+    const matches = supplied.length === expected.length && timingSafeEqual(supplied, expected);
+    if (!matches) {
+      audit(user.id, 'owner.claim_failed', { ip: clientIp(req) });
+      return fail(403, 'invalid_code', 'That owner setup code is incorrect.');
+    }
+
+    const now = nowIso();
+    db.prepare(
+      `UPDATE users
+          SET is_owner = 1,
+              title = COALESCE(NULLIF(title, ''), ?),
+              display_name = ?,
+              updated_at = ?
+        WHERE id = ?`,
+    ).run(OWNER_TITLE, OWNER_DISPLAY_NAME, now, user.id);
+    audit(user.id, 'owner.granted', {
+      targetType: 'user',
+      targetId: user.id,
+      metadata: { method: 'owner_setup_code' },
+      ip: clientIp(req),
+    });
+
+    const fresh = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
+    res.json({ ok: true, user: publicUser(fresh, { includeEmail: true }), settings: settingsFor(fresh.id) });
   }),
 );
 
