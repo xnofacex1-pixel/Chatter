@@ -1529,6 +1529,9 @@ export default function OwnerConsole() {
           </div>
         )}
 
+          </div>
+        </div>
+
         {confirm && (
           <div className="owner-confirm" role="dialog" aria-label="Confirm destructive action">
             <IconWarning size={16} />
