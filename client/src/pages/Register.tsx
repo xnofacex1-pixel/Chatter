@@ -34,20 +34,13 @@ export default function Register() {
 
     setBusy(true);
     try {
-      const result = await register({
+      await register({
         email: form.email.trim(),
         username: form.username.trim(),
         displayName: form.displayName.trim() || undefined,
         password: form.password,
       });
-      navigate('/verify-email', {
-        replace: true,
-        state: {
-          emailSent: result.emailSent,
-          verificationUrl: result.verificationUrl,
-          email: form.email.trim(),
-        },
-      });
+      navigate('/', { replace: true });
     } catch (caught) {
       const described = describeError(caught);
       setError(described.message);
