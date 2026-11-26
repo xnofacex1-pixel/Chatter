@@ -4,9 +4,11 @@ import { AppShell } from '../components/AppShell';
 import { Avatar, OwnerBadge } from '../components/Avatar';
 import { useToast } from '../components/Toast';
 import {
+  IconCamera,
   IconCheck,
   IconClose,
   IconMessage,
+  IconPhone,
   IconPin,
   IconPlus,
   IconSearch,
@@ -34,6 +36,7 @@ import {
   type User,
 } from '../lib/api';
 import { useRealtime } from '../lib/realtime';
+import { useCall } from '../lib/call-context';
 import { formatDate, relativeTime } from '../lib/format';
 
 const QUICK_REACTIONS = ['👍', '❤️', '😂', '🎉', '😮', '😢'];
@@ -72,6 +75,7 @@ export default function Messages() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [detail, setDetail] = useState<{ conversation: Conversation; members: ConversationMember[] } | null>(null);
+  const calls = useCall();
   const [messages, setMessages] = useState<Message[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [threadLoading, setThreadLoading] = useState(false);
@@ -628,6 +632,24 @@ export default function Messages() {
       headActions={
         detail ? (
           <div className="row" style={{ gap: 6, position: 'relative' }}>
+            <button
+              type="button"
+              className="icon-btn"
+              title="Start voice call"
+              aria-label="Start voice call"
+              onClick={() => void calls.start({ conversationId: detail.conversation.id, kind: 'voice' })}
+            >
+              <IconPhone size={16} />
+            </button>
+            <button
+              type="button"
+              className="icon-btn"
+              title="Start video call"
+              aria-label="Start video call"
+              onClick={() => void calls.start({ conversationId: detail.conversation.id, kind: 'video' })}
+            >
+              <IconCamera size={16} />
+            </button>
             <button type="button" className="icon-btn" title="Pinned messages" aria-label="Pinned messages" onClick={() => void openPins()}>
               <IconPin size={16} />
             </button>

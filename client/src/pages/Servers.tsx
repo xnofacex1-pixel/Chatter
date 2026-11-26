@@ -7,6 +7,7 @@ import { Avatar, OwnerBadge } from '../components/Avatar';
 import { useToast } from '../components/Toast';
 import { useAuth } from '../lib/auth';
 import { useRealtime } from '../lib/realtime';
+import { useCall } from '../lib/call-context';
 import { ApiError } from '../lib/api';
 import {
   has,
@@ -24,13 +25,18 @@ import {
   IconClose,
   IconCompass,
   IconHeadphones,
+  IconHeadphonesOff,
   IconLock,
+  IconMic,
+  IconMicOff,
+  IconMonitor,
   IconPlus,
   IconSearch,
   IconSettings,
   IconShield,
   IconTrash,
   IconUsers,
+  IconWarning,
 } from '../components/icons';
 import { IconMore } from '../components/icons-extra';
 
@@ -419,17 +425,7 @@ export default function Servers() {
             }}
           />
         ) : activeChannel && activeChannel.type === 'voice' ? (
-          <div className="empty-state">
-            <div className="empty-icon"><IconHeadphones size={26} /></div>
-            <h2>{activeChannel.name}</h2>
-            <p className="muted">
-              Voice and video rooms are connected in the next stage of Chatter. This room currently has {members.length} community
-              members who can join it.
-            </p>
-            <button type="button" className="btn btn-ghost" onClick={() => navigate(`/servers/${detail.server.id}`)}>
-              Back to text channels
-            </button>
-          </div>
+          <VoiceChannelView channel={activeChannel} />
         ) : (
           <div className="empty-state">
             <div className="empty-icon"><IconUsers size={26} /></div>
@@ -900,3 +896,77 @@ function CreateChannelModal({
 }
 
 export { bytes };
+
+function VoiceChannelView({ channel }: { channel: ServerChannel }) {
+  const calls = useCall();
+  const active =
+    calls.call && calls.call.channelId === channel.id && calls.call.status !== 'ended' ? calls.call : null;
+  const joined = active?.me?.state === 'joined';
+  const participants = active ? active.participants.filter((entry) => entry.state === 'joined') : [];
+
+  return (
+    <div className="voice-room">
+      <div className="voice-room-head">
+        <div className="empty-icon"><IconHeadphones size={26} /></div>
+        <div>
+          <h2 style={{ margin: 0 }}>{channel.name}</h2>
+          <p className="muted small" style={{ margin: 0 }}>
+            {active
+              ? `${participants.length} connected · ${active.kind === 'video' ? 'video' : 'voice'} room`
+              : 'Nobody is in this room yet.'}
+          </p>
+        </div>
+      </div>
+      {calls.error && (
+        <div className="call-error-inline" role="alert">
+          <IconWarning size={15} /> <span className="grow">{calls.error}</span>
+        </div>
+      )}
+      <div className="voice-room-people">
+        {participants.map((entry) => (
+          <div key={entry.userId} className={`voice-chip ${entry.micMuted ? 'muted' : ''}`}>
+            <span className="voice-chip-dot" />
+            <span className="truncate">{entry.user?.displayName ?? 'Member'}</span>
+            {entry.micMuted ? <IconMicOff size={13} /> : <IconMic size={13} />}
+            {entry.screenOn && <IconMonitor size={13} />}
+          </div>
+        ))}
+        {participants.length === 0 && <p className="muted small">Join to open this room for the community.</p>}
+      </div>
+      <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+        {!joined && (
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={calls.phase === 'connecting'}
+            onClick={() => {
+              if (active) void calls.join(active.id);
+              else void calls.start({ channelId: channel.id, kind: 'voice' });
+            }}
+          >
+            <IconHeadphones size={15} />{' '}
+            {calls.phase === 'connecting' ? 'Connecting…' : active ? 'Join voice room' : 'Open voice room'}
+          </button>
+        )}
+        {joined && (
+          <>
+            <button type="button" className="btn btn-ghost" onClick={() => void calls.toggleMic()}>
+              {calls.micMuted ? <IconMicOff size={15} /> : <IconMic size={15} />} {calls.micMuted ? 'Unmute' : 'Mute'}
+            </button>
+            <button type="button" className="btn btn-ghost" onClick={() => void calls.toggleDeafen()}>
+              {calls.deafened ? <IconHeadphonesOff size={15} /> : <IconHeadphones size={15} />}{' '}
+              {calls.deafened ? 'Undeafen' : 'Deafen'}
+            </button>
+            <button type="button" className="btn btn-ghost call-danger" onClick={() => void calls.leave()}>
+              Leave room
+            </button>
+          </>
+        )}
+      </div>
+      <p className="muted small">
+        Chatter connects this room peer-to-peer over WebRTC using its own signalling server — no third-party RTC service and no
+        paid provider.
+      </p>
+    </div>
+  );
+}

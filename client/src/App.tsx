@@ -4,6 +4,8 @@ import { ToastProvider } from './components/Toast';
 import { LoadingScreen } from './components/LoadingScreen';
 import { LogoMark } from './components/Logo';
 import { AuthProvider, useAuth } from './lib/auth';
+import { CallProvider } from './lib/call-context';
+import CallOverlay from './components/CallOverlay';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -76,7 +78,9 @@ export default function App() {
       <ToastProvider>
         <AuthProvider>
           <BrowserRouter>
-            <Routes>
+            <CallProvider>
+              <CallOverlay />
+              <Routes>
               <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
               <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
               <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
@@ -95,6 +99,7 @@ export default function App() {
               <Route path="/u/:username" element={<ProtectedRoute><ProfileView /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </CallProvider>
           </BrowserRouter>
         </AuthProvider>
       </ToastProvider>
