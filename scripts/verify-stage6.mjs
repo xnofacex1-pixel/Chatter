@@ -150,7 +150,7 @@ try {
   check(Boolean(bobRequestNotice), 'recipient receives a friend request notification');
   check(bobRequestNotice?.actor?.username === aliceName, 'friend request notification names the sender');
   check(bobInbox.json?.unread >= 1, 'friend request increments the unread counter');
-  check(bobRequestNotice?.read === false, 'new notification starts unread');
+  check(bobRequestNotice?.readAt === null, 'new notification starts unread');
 
   const noAliceNotice = await alice.req('/api/notifications');
   check(
@@ -254,7 +254,7 @@ try {
   check(cleared.status === 200, 'clearing read notifications succeeds', `status ${cleared.status}`);
   const afterClear = await bob.req('/api/notifications');
   check(
-    (afterClear.json?.notifications ?? []).every((entry) => entry.read === false),
+    (afterClear.json?.notifications ?? []).every((entry) => entry.readAt === null),
     'only read notifications are cleared',
   );
 
@@ -275,7 +275,7 @@ try {
     'muted message preference suppresses new message notifications',
   );
 
-  const settings = await bob.req('/api/me/settings');
+  const settings = await bob.req('/api/me');
   check(settings.status === 200, 'settings endpoint returns notification preferences');
   const notificationsPrefs = settings.json?.settings?.notifications;
   check(
