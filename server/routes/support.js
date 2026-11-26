@@ -159,11 +159,25 @@ function ownTicket(ticketId, userId) {
   return db.prepare('SELECT * FROM support_tickets WHERE id = ? AND user_id = ?').get(ticketId, userId);
 }
 
-const attachmentSchema = z
-  .array(z.string().trim().min(8).max(80))
-  .max(5)
-  .optional()
-  .default([]);
+const attachmentEntry = z.union([
+  z.string().trim().min(8).max(80),
+  z.object({
+    id: z.string().trim().min(8).max(80),
+    name: z.string().max(160).optional(),
+    mime: z.string().max(120).optional(),
+    byteSize: z.number().optional(),
+  }),
+]);
+
+const attachmentSchema = z.array(attachmentEntry).max(5).optional().default([]);
+
+/** Attachments arrive either as ids or as metadata objects; store the rich form. */
+const normalizeAttachments = (list) =>
+  list.map((entry) =>
+    typeof entry === 'string'
+      ? { id: entry }
+      : { id: entry.id, name: entry.name, mime: entry.mime, byteSize: entry.byteSize },
+  );
 
 const createSchema = z.object({
   subject: z.string().trim().min(3, 'Give your ticket a short subject.').max(140),
@@ -400,8 +414,9 @@ router.post(
     if (!ticket) return fail(404, 'ticket_not_found', 'That ticket no longer exists.');
     const parsed = replySchema.safeParse(req.body ?? {});
     if (!parsed.success) return fail(400, 'invalid_input', parsed.error.issues[0]?.message || 'Write a message first.');
-    const { body, attachments, internal } = parsed.data;
-    assertAttachmentOwnership(attachments, req.user.id);
+    const { body, internal } = parsed.data;
+    const attachments = normalizeAttachments(parsed.data.attachments);
+    assertAttachmentOwnership(attachments.map((entry) => entry.id), req.user.id);
 
     const now = nowIso();
     const id = randomUUID();
@@ -529,8 +544,9 @@ router.post(
   route(async (req, res) => {
     const parsed = createSchema.safeParse(req.body ?? {});
     if (!parsed.success) return fail(400, 'invalid_input', parsed.error.issues[0]?.message || 'Check the ticket details.');
-    const { subject, description, category, priority, attachments } = parsed.data;
-    assertAttachmentOwnership(attachments, req.user.id);
+    const { subject, description, category, priority } = parsed.data;
+    const attachments = normalizeAttachments(parsed.data.attachments);
+    assertAttachmentOwnership(attachments.map((entry) => entry.id), req.user.id);
 
     const id = randomUUID();
     const now = nowIso();
@@ -583,8 +599,9 @@ router.post(
     }
     const parsed = replySchema.safeParse(req.body ?? {});
     if (!parsed.success) return fail(400, 'invalid_input', parsed.error.issues[0]?.message || 'Write a message first.');
-    const { body, attachments } = parsed.data;
-    assertAttachmentOwnership(attachments, req.user.id);
+    const { body } = parsed.data;
+    const attachments = normalizeAttachments(parsed.data.attachments);
+    assertAttachmentOwnership(attachments.map((entry) => entry.id), req.user.id);
 
     const now = nowIso();
     const id = randomUUID();
