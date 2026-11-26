@@ -98,6 +98,8 @@ try {
   const alice = client();
   const bob = client();
   const eve = client();
+  // Never joins any community: used to assert outsider isolation after eve accepted an invite.
+  const solo = client();
 
   const register = async (session, username) => {
     const res = await session.req('/api/auth/register', {
@@ -116,6 +118,7 @@ try {
   const aliceUser = await register(alice, 'srvowner');
   const bobUser = await register(bob, 'srvmember');
   await register(eve, 'srvoutsider');
+  await register(solo, 'srvsolo');
 
   const created = await alice.req('/api/servers', {
     method: 'POST',
@@ -170,7 +173,7 @@ try {
   check(preview.status === 200 && preview.json?.server?.name === 'Stage Three Guild', 'invite preview is public');
 
   const joined = await bob.req(`/api/invites/${code}`, { method: 'POST', body: {} });
-  check(joined.status === 200, 'member joins through the invite', `status ${joined.status} ${joined.text.slice(0, 160)}`);
+  check(joined.status === 201 || joined.status === 200, 'member joins through the invite', `status ${joined.status} ${joined.text.slice(0, 160)}`);
 
   const members = await alice.req(`/api/servers/${serverId}/members`);
   const memberIds = (members.json?.members ?? []).map((member) => member.id ?? member.userId ?? member.user?.id);
@@ -261,7 +264,13 @@ try {
   check(afterKick.status === 404, 'kicked member loses channel access', `status ${afterKick.status}`);
 
   const rejoin = await bob.req(`/api/invites/${code}`, { method: 'POST', body: {} });
-  check(rejoin.status === 200, 'kicked member can rejoin with a valid invite', `status ${rejoin.status}`);
+  check(rejoin.status === 201 || rejoin.status === 200, 'kicked member can rejoin with a valid invite', `status ${rejoin.status}`);
+
+  const banInvite = await alice.req(`/api/servers/${serverId}/invites`, {
+    method: 'POST',
+    body: { maxUses: 10, expiresInHours: 24 },
+  });
+  const banCode = banInvite.json?.invite?.code;
 
   const banned = await alice.req(`/api/servers/${serverId}/members/${bobUser.id}/ban`, {
     method: 'POST',
@@ -269,8 +278,8 @@ try {
   });
   check(banned.status === 200, 'owner bans a member', `status ${banned.status} ${banned.text.slice(0, 160)}`);
 
-  const bannedRejoin = await bob.req(`/api/invites/${code}`, { method: 'POST', body: {} });
-  check(bannedRejoin.status === 403, 'banned member cannot rejoin', `status ${bannedRejoin.status}`);
+  const bannedRejoin = await bob.req(`/api/invites/${banCode}`, { method: 'POST', body: {} });
+  check(bannedRejoin.status === 403, 'banned member cannot rejoin', `status ${bannedRejoin.status} ${bannedRejoin.text.slice(0, 120)}`);
 
   console.log('\nStage 3 — settings, discovery and invite limits');
   const notify = await alice.req(`/api/servers/${serverId}/notifications`, { method: 'PATCH', body: { level: 'mentions' } });
@@ -298,7 +307,7 @@ try {
   const readMarker = await alice.req(`/api/servers/${serverId}/channels/${general.id}/read`, { method: 'POST', body: {} });
   check(readMarker.status === 200, 'channel read marker recorded', `status ${readMarker.status}`);
 
-  const outsiderServer = await eve.req(`/api/servers/${serverId}`);
+  const outsiderServer = await solo.req(`/api/servers/${serverId}`);
   check(outsiderServer.status === 404 || outsiderServer.status === 403, 'outsider cannot read community detail', `status ${outsiderServer.status}`);
 } catch (error) {
   check(false, 'stage 3 verification completed without throwing', String(error));
