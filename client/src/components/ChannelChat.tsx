@@ -5,6 +5,8 @@ import { Avatar, OwnerBadge } from './Avatar';
 import { IconClose, IconLock, IconPin, IconTrash } from './icons';
 import { IconDownload, IconEdit, IconPaperclip, IconReply, IconSend, IconSmile } from './icons-extra';
 import { useToast } from './Toast';
+import { PollCard, PollComposer } from './polls';
+import { ThreadPanel } from './ThreadPanel';
 
 export type ChatEvent = { seq: number; name: string; data: Record<string, unknown> };
 
@@ -95,6 +97,8 @@ export function ChannelChat({
   const [cooldown, setCooldown] = useState(0);
   const [pinsOpen, setPinsOpen] = useState(false);
   const [pinned, setPinned] = useState<Message[]>([]);
+  const [threadFor, setThreadFor] = useState<Message | null>(null);
+  const [pollOpen, setPollOpen] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -460,6 +464,16 @@ export function ChannelChat({
                               ))}
                             </div>
                           )}
+                          {message.poll && (
+                            <PollCard
+                              poll={message.poll}
+                              canVote={canSend}
+                              onVote={async (optionIds) => {
+                                const data = await api.votePoll(conversationId, message.id, optionIds);
+                                upsert(data.message);
+                              }}
+                            />
+                          )}
                           {message.editedAt && <span className="chat-msg-edited">edited</span>}
                         </>
                       )}
@@ -478,6 +492,22 @@ export function ChannelChat({
                               {reaction.emoji} {reaction.count}
                             </button>
                           ))}
+                        </div>
+                      )}
+                      {(message.threadReplyCount > 0 || canSend) && (
+                        <div className="chat-reactions">
+                          <button
+                            type="button"
+                            className="chat-reaction"
+                            onClick={() => setThreadFor(message)}
+                            aria-label={
+                              message.threadReplyCount > 0
+                                ? `Open thread, ${message.threadReplyCount} replies`
+                                : 'Start a thread'
+                            }
+                          >
+                            Thread{message.threadReplyCount > 0 ? ` · ${message.threadReplyCount}` : ''}
+                          </button>
                         </div>
                       )}
                       {emojiFor === message.id && (
@@ -656,6 +686,39 @@ export function ChannelChat({
             )}
           </div>
         </div>
+      )}
+      {pollOpen && (
+        <PollComposer
+          sending={sending}
+          onCancel={() => setPollOpen(false)}
+          onSubmit={async (draft) => {
+            setSending(true);
+            try {
+              const data = await api.sendMessage(conversationId, {
+                poll: { question: draft.question, options: draft.options, multiple: draft.multiple },
+              });
+              upsert(data.message);
+              setPollOpen(false);
+            } catch (cause) {
+              toast.error('Poll not posted', cause instanceof ApiError ? cause.message : 'Please try again.');
+            } finally {
+              setSending(false);
+            }
+          }}
+        />
+      )}
+      {threadFor && (
+        <ThreadPanel
+          conversationId={conversationId}
+          root={threadFor}
+          meId={me.id}
+          canSend={canSend}
+          onClose={() => setThreadFor(null)}
+          onRootChanged={(updated) => {
+            upsert(updated);
+            setThreadFor(updated);
+          }}
+        />
       )}
       {dragging && <div className="drop-hint">Drop files to upload</div>}
     </div>
