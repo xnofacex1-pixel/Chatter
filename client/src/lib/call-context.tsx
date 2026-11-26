@@ -31,6 +31,7 @@ export interface CallContextValue {
   deafened: boolean;
   videoOn: boolean;
   screenOn: boolean;
+  screenStream: MediaStream | null;
   speaking: Record<string, boolean>;
   peerStates: Record<string, RTCPeerConnectionState>;
   phase: CallPhase;
@@ -128,6 +129,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
   const [deafened, setDeafened] = useState(false);
   const [videoOn, setVideoOn] = useState(false);
   const [screenOn, setScreenOn] = useState(false);
+  const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
   const [speaking, setSpeaking] = useState<Record<string, boolean>>({});
   const [peerStates, setPeerStates] = useState<Record<string, RTCPeerConnectionState>>({});
   const [phase, setPhase] = useState<CallPhase>('idle');
@@ -197,6 +199,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
     setDeafened(false);
     setVideoOn(false);
     setScreenOn(false);
+    setScreenStream(null);
   }, []);
 
   const buildSession = useCallback(
@@ -399,6 +402,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
     screenTrackRef.current = null;
     track?.stop();
     setScreenOn(false);
+    setScreenStream(null);
     await sessionRef.current?.useVideoTrack(cameraTrackRef.current);
     if (current) await callApi.setState(current.id, { screenOn: false }).catch(() => undefined);
   }, []);
@@ -417,6 +421,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
       const track = captured.getVideoTracks()[0];
       if (!track) return;
       screenTrackRef.current = track;
+      setScreenStream(captured);
       track.addEventListener('ended', () => {
         void stopShareRef.current();
       });
@@ -545,6 +550,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
       deafened,
       videoOn,
       screenOn,
+      screenStream,
       speaking,
       peerStates,
       phase,
@@ -582,6 +588,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
       deafened,
       videoOn,
       screenOn,
+      screenStream,
       speaking,
       peerStates,
       phase,
