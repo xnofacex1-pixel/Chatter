@@ -915,6 +915,14 @@ function CreateChannelModal({
   );
 }
 
+function ChannelGlyph({ type }: { type: ChannelType }) {
+  if (type === 'voice') return <IconHeadphones size={15} />;
+  if (type === 'announcement') return <IconMegaphone size={15} />;
+  if (type === 'forum') return <IconForum size={15} />;
+  if (type === 'media') return <IconImage size={15} />;
+  return <span className="channel-hash-sm">#</span>;
+}
+
 export { bytes };
 
 function VoiceChannelView({ channel }: { channel: ServerChannel }) {
