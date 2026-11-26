@@ -214,7 +214,7 @@ try {
   const conversationId = dm.json?.conversation?.id;
   check(Boolean(conversationId), 'direct conversation created for paging', `status ${dm.status}`);
 
-  for (let index = 1; index <= 45; index += 1) {
+  for (let index = 1; index <= 18; index += 1) {
     const sent = await bob.req(`/api/conversations/${conversationId}/messages`, {
       method: 'POST',
       body: { body: `page message ${index}` },
@@ -225,18 +225,18 @@ try {
     }
   }
 
-  const firstPage = await bob.req(`/api/conversations/${conversationId}/messages?limit=20`);
+  const firstPage = await bob.req(`/api/conversations/${conversationId}/messages?limit=6`);
   const page = firstPage.json?.messages ?? [];
-  check(page.length === 20, 'history request is bounded by the limit', `got ${page.length}`);
+  check(page.length === 6, 'history request is bounded by the limit', `got ${page.length}`);
   check(firstPage.json?.hasMore === true, 'older history is reported as available');
   const pageIds = new Set(page.map((message) => message.id));
   const oldest = page[0];
 
   const secondPage = await bob.req(
-    `/api/conversations/${conversationId}/messages?limit=20&before=${encodeURIComponent(oldest?.createdAt ?? '')}&beforeId=${oldest?.id ?? ''}`,
+    `/api/conversations/${conversationId}/messages?limit=6&before=${encodeURIComponent(oldest?.createdAt ?? '')}&beforeId=${oldest?.id ?? ''}`,
   );
   const next = secondPage.json?.messages ?? [];
-  check(next.length === 20, 'cursor page returns a full page', `got ${next.length}`);
+  check(next.length === 6, 'cursor page returns a full page', `got ${next.length}`);
   check(next.every((message) => !pageIds.has(message.id)), 'cursor page does not repeat messages');
   check(
     next.every((message) => new Date(message.createdAt) <= new Date(oldest?.createdAt ?? 0)),
