@@ -74,6 +74,16 @@ export type AttachmentUpload = {
 
 export type MessageReaction = { emoji: string; count: number; me: boolean };
 
+export type MessagePollOption = { id: string; label: string; votes: number; percent: number };
+
+export type MessagePoll = {
+  question: string;
+  multiple: boolean;
+  totalVotes: number;
+  myOptionIds: string[];
+  options: MessagePollOption[];
+};
+
 export type Message = {
   id: string;
   conversationId: string;
@@ -82,6 +92,9 @@ export type Message = {
   editedAt: string | null;
   deletedAt: string | null;
   pinnedAt: string | null;
+  threadRootId: string | null;
+  threadReplyCount: number;
+  poll: MessagePoll | null;
   author: User | null;
   attachments: AttachmentUpload[];
   reactions: MessageReaction[];
@@ -329,8 +342,23 @@ export const api = {
       `/api/conversations/${id}/messages${query ? `?${query}` : ''}`,
     );
   },
-  sendMessage: (id: string, input: { body?: string; attachmentIds?: string[]; replyToId?: string | null }) =>
-    request<{ message: Message }>(`/api/conversations/${id}/messages`, { method: 'POST', body: input }),
+  sendMessage: (
+    id: string,
+    input: {
+      body?: string;
+      attachmentIds?: string[];
+      replyToId?: string | null;
+      threadRootId?: string | null;
+      poll?: { question: string; options: string[]; multiple?: boolean };
+    },
+  ) => request<{ message: Message }>(`/api/conversations/${id}/messages`, { method: 'POST', body: input }),
+  votePoll: (id: string, messageId: string, optionIds: string[]) =>
+    request<{ message: Message }>(`/api/conversations/${id}/messages/${messageId}/vote`, {
+      method: 'POST',
+      body: { optionIds },
+    }),
+  thread: (id: string, messageId: string) =>
+    request<{ root: Message; replies: Message[] }>(`/api/conversations/${id}/messages/${messageId}/thread`),
   editMessage: (id: string, messageId: string, body: string) =>
     request<{ message: Message }>(`/api/conversations/${id}/messages/${messageId}`, {
       method: 'PATCH',
