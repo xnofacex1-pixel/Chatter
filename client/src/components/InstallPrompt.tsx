@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { IconDownload, IconX } from './icons';
+import { IconDownload, IconClose } from './icons';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -75,7 +75,7 @@ export function InstallPrompt({ compact = false }: { compact?: boolean }) {
           <IconDownload size={14} /> Install
         </button>
         <button type="button" className="icon-btn" aria-label="Dismiss install prompt" onClick={dismiss}>
-          <IconX size={15} />
+          <IconClose size={15} />
         </button>
       </div>
     </div>

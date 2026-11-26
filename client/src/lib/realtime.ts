@@ -19,6 +19,7 @@ export const REALTIME_EVENTS = [
   'call:updated',
   'call:signal',
   'call:ended',
+  'notification',
 ] as const;
 
 export type RealtimeHandler = (event: string, data: Record<string, unknown>) => void;
