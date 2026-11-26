@@ -1,35 +1,65 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AppShell, DefaultSidebar, MemberList, useDirectory } from '../components/AppShell';
+import { AppShell, DefaultSidebar } from '../components/AppShell';
 import { Avatar, OwnerBadge } from '../components/Avatar';
 import { EmptyState } from '../components/LoadingScreen';
-import { IconCompass, IconSettings, IconShield, IconSparkle, IconUsers } from '../components/icons';
+import {
+  IconCompass,
+  IconMessage,
+  IconPlus,
+  IconShield,
+  IconSparkle,
+  IconUsers,
+} from '../components/icons';
 import { useAuth } from '../lib/auth';
-import { api, type PlatformStats, type User } from '../lib/api';
-import { formatDate, presenceLabel } from '../lib/format';
+import { api, type Conversation, type PlatformStats } from '../lib/api';
+import { serverApi, type ServerSummary } from '../lib/servers';
+import { relativeTime } from '../lib/format';
+
+function serverInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
+function conversationTitle(conversation: Conversation) {
+  if (conversation.kind === 'group') return conversation.title || 'Group conversation';
+  return conversation.partner?.displayName ?? conversation.title ?? 'Direct message';
+}
 
 export default function Home() {
   const { user } = useAuth();
-  const directory = useDirectory();
   const [stats, setStats] = useState<PlatformStats | null>(null);
-  const [recent, setRecent] = useState<User[]>([]);
-  const [loadingStats, setLoadingStats] = useState(true);
+  const [servers, setServers] = useState<ServerSummary[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [onlineFriends, setOnlineFriends] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    api
-      .stats()
-      .then((data) => {
+    Promise.allSettled([api.stats(), serverApi.list(), api.conversations(), api.friends()])
+      .then(([statsResult, serversResult, conversationsResult, friendsResult]) => {
         if (cancelled) return;
-        setStats(data.stats);
-        setRecent(data.recentMembers);
-      })
-      .catch(() => {
-        if (!cancelled) setError('Chatter could not load community statistics right now.');
+        if (statsResult.status === 'fulfilled') setStats(statsResult.value.stats);
+        if (serversResult.status === 'fulfilled') setServers(serversResult.value.servers);
+        if (conversationsResult.status === 'fulfilled') setConversations(conversationsResult.value.conversations);
+        if (friendsResult.status === 'fulfilled') {
+          setOnlineFriends(friendsResult.value.friends.filter((friend) => friend.presence !== 'offline').length);
+        }
+        if (
+          statsResult.status === 'rejected' &&
+          serversResult.status === 'rejected' &&
+          conversationsResult.status === 'rejected'
+        ) {
+          setError('Chatter could not load your workspace right now. Reload to try again.');
+        }
       })
       .finally(() => {
-        if (!cancelled) setLoadingStats(false);
+        if (!cancelled) setLoading(false);
       });
     return () => {
       cancelled = true;
@@ -44,40 +74,51 @@ export default function Home() {
     return 'Good evening';
   }, []);
 
+  const unreadConversations = useMemo(
+    () => conversations.filter((conversation) => conversation.unreadCount > 0),
+    [conversations],
+  );
+  const totalUnread = useMemo(
+    () => conversations.reduce((total, conversation) => total + conversation.unreadCount, 0),
+    [conversations],
+  );
+  const recentConversations = useMemo(
+    () =>
+      [...conversations]
+        .filter((conversation) => !conversation.archived)
+        .sort((a, b) => (b.lastMessageAt ?? b.updatedAt).localeCompare(a.lastMessageAt ?? a.updatedAt))
+        .slice(0, 6),
+    [conversations],
+  );
+
   if (!user) return null;
 
   return (
-    <AppShell
-      title="Home"
-      subtitle="Your community at a glance"
-      sidebar={<DefaultSidebar active="home" />}
-      members={<MemberList users={directory.users} loading={directory.loading} />}
-    >
+    <AppShell title="Home" subtitle="Your community. Your conversations. Your Chatter." sidebar={<DefaultSidebar active="home" />}>
       <div className="stack" style={{ gap: 18 }}>
         <section className="hero">
           <div className="hero-content">
             <div className="row" style={{ gap: 8 }}>
               <span className="badge">
-                <IconSparkle size={12} /> Stage 1 · Foundation
+                <IconSparkle size={12} /> Chatter home
               </span>
-              <span className="badge">{presenceLabel(user.presence)}</span>
+              {totalUnread > 0 && <span className="badge" data-kind="warning">{totalUnread} unread</span>}
             </div>
             <h2 style={{ margin: 0, fontSize: 30, letterSpacing: '-0.03em', lineHeight: 1.15 }}>
               {greeting}, {user.displayName.split(' ')[0]}
             </h2>
             <p className="muted" style={{ margin: 0, maxWidth: 560 }}>
-              Your community. Your conversations. Your Chatter. Accounts, profiles, presence and the full workspace are
-              live — direct messages arrive in Stage 2.
+              Jump back into your servers, catch up on unread conversations or start something new.
             </p>
             <div className="hero-actions">
-              <Link className="btn btn-primary" to="/members">
-                <IconUsers size={16} /> Browse members
+              <Link className="btn btn-primary" to="/messages">
+                <IconMessage size={16} /> Open messages
               </Link>
-              <Link className="btn btn-ghost" to="/profile">
-                Edit my profile
+              <Link className="btn btn-ghost" to="/friends">
+                <IconUsers size={16} /> Add friends
               </Link>
-              <Link className="btn btn-ghost" to="/settings">
-                <IconSettings size={16} /> Settings
+              <Link className="btn btn-ghost" to="/ai">
+                <IconSparkle size={16} /> Chatter AI
               </Link>
             </div>
           </div>
@@ -93,117 +134,163 @@ export default function Home() {
         )}
 
         <div className="stat-grid">
-          <StatCard label="Members" value={loadingStats ? null : stats?.totalUsers} meta="Registered accounts" />
-          <StatCard label="Online now" value={loadingStats ? null : stats?.onlineUsers} meta="Active in the last 2 minutes" />
-          <StatCard label="Verified" value={loadingStats ? null : stats?.verifiedUsers} meta="Confirmed email addresses" />
-          <StatCard label="New this week" value={loadingStats ? null : stats?.newThisWeek} meta="Fresh Chatter accounts" />
+          <StatCard label="Your servers" value={loading ? null : servers.length} meta="Communities you belong to" />
+          <StatCard label="Conversations" value={loading ? null : conversations.length} meta="Direct and group chats" />
+          <StatCard label="Unread" value={loading ? null : totalUnread} meta="Messages waiting for you" />
+          <StatCard label="Friends online" value={loading ? null : onlineFriends} meta="Available right now" />
         </div>
 
-        <div className="settings-layout">
+        <section className="card">
+          <div className="section-head">
+            <span>Your servers</span>
+            <Link className="tiny" to="/servers">
+              Browse all
+            </Link>
+          </div>
+          {servers.length === 0 ? (
+            <EmptyState
+              title="No communities yet"
+              description="Create your own server or discover a public community to join."
+              icon={<IconCompass size={26} />}
+            />
+          ) : (
+            <div className="home-server-grid">
+              {servers.slice(0, 8).map((server) => (
+                <Link key={server.id} to={`/servers/${server.id}`} className="home-server-card">
+                  <span className="home-server-icon" aria-hidden="true">
+                    {server.iconUrl ? <img src={server.iconUrl} alt="" /> : serverInitials(server.name)}
+                  </span>
+                  <span className="grow truncate">
+                    <span className="home-server-name truncate">{server.name}</span>
+                    <span className="tiny muted truncate">
+                      {server.memberCount} member{server.memberCount === 1 ? '' : 's'} · {server.onlineCount} online
+                    </span>
+                  </span>
+                  {server.isOwner && <span className="badge">Owner</span>}
+                </Link>
+              ))}
+              <Link to="/servers" className="home-server-card home-server-create">
+                <span className="home-server-icon" aria-hidden="true">
+                  <IconPlus size={16} />
+                </span>
+                <span className="grow">
+                  <span className="home-server-name">Create or join</span>
+                  <span className="tiny muted">Start a new community</span>
+                </span>
+              </Link>
+            </div>
+          )}
+        </section>
+
+        <div className="home-columns">
+          <section className="card">
+            <div className="section-head">
+              <span>Recent conversations</span>
+              <Link className="tiny" to="/messages">
+                All messages
+              </Link>
+            </div>
+            {recentConversations.length === 0 ? (
+              <EmptyState
+                title="No conversations yet"
+                description="Add a friend and send your first direct message."
+                icon={<IconMessage size={26} />}
+              />
+            ) : (
+              <div className="list-card">
+                {recentConversations.map((conversation) => {
+                  const partner = conversation.partner;
+                  const label = conversationTitle(conversation);
+                  return (
+                    <Link key={conversation.id} to={`/messages/${conversation.id}`} className="list-row">
+                      {partner ? (
+                        <Avatar user={partner} size="sm" showPresence />
+                      ) : (
+                        <span className="avatar avatar-sm" aria-hidden="true">
+                          {label.slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
+                      <span className="grow truncate">
+                        <span className="row" style={{ gap: 6 }}>
+                          <span className="truncate">{label}</span>
+                          {conversation.kind === 'group' && <span className="badge">Group</span>}
+                        </span>
+                        <span className="tiny muted truncate">
+                          {conversation.lastMessage?.deleted
+                            ? 'Message deleted'
+                            : conversation.lastMessage?.body || 'No messages yet'}
+                        </span>
+                      </span>
+                      <span className="stack" style={{ alignItems: 'flex-end', gap: 4 }}>
+                        <span className="tiny muted">{relativeTime(conversation.lastMessageAt ?? conversation.updatedAt)}</span>
+                        {conversation.unreadCount > 0 && <span className="badge" data-kind="warning">{conversation.unreadCount}</span>}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
           <div className="stack" style={{ gap: 16 }}>
             <section className="card">
               <div className="section-head">
-                <span>Your account</span>
-                <Link className="tiny" to="/settings">
-                  Manage
+                <span>Unread</span>
+                <Link className="tiny" to="/messages">
+                  Open inbox
                 </Link>
               </div>
-              <div className="card-pad stack" style={{ gap: 12 }}>
-                <div className="row-between">
-                  <span className="muted small">Display name</span>
-                  <span className="row" style={{ gap: 6 }}>
-                    {user.displayName}
-                    {user.isOwner && <OwnerBadge compact />}
-                  </span>
+              {unreadConversations.length === 0 ? (
+                <div className="card-pad">
+                  <p className="small muted" style={{ margin: 0 }}>
+                    You are all caught up. New messages will show up here.
+                  </p>
                 </div>
-                <div className="divider" />
-                <div className="row-between">
-                  <span className="muted small">Username</span>
-                  <span className="mono">@{user.username}</span>
-                </div>
-                <div className="divider" />
-                <div className="row-between">
-                  <span className="muted small">Email</span>
-                  <span className="row" style={{ gap: 6 }}>
-                    <span className="truncate" style={{ maxWidth: 220 }}>{user.email ?? '—'}</span>
-                    <span className="badge" data-kind={user.emailVerified ? 'success' : 'warning'}>
-                      {user.emailVerified ? 'Verified' : 'Unverified'}
-                    </span>
-                  </span>
-                </div>
-                <div className="divider" />
-                <div className="row-between">
-                  <span className="muted small">Member since</span>
-                  <span>{formatDate(user.createdAt)}</span>
-                </div>
-                {user.title && (
-                  <>
-                    <div className="divider" />
-                    <div className="row-between">
-                      <span className="muted small">Title</span>
-                      <span>{user.title}</span>
-                    </div>
-                  </>
-                )}
-              </div>
-            </section>
-
-            <section className="card">
-              <div className="section-head">
-                <span>Newest members</span>
-                <Link className="tiny" to="/members">
-                  See all
-                </Link>
-              </div>
-              {recent.length === 0 ? (
-                <EmptyState title="No other members yet" description="Invite someone to Chatter and they will appear here." icon={<IconUsers size={26} />} />
               ) : (
                 <div className="list-card">
-                  {recent.map((member) => (
-                    <Link key={member.id} to={`/u/${member.username}`} className="list-row">
-                      <Avatar user={member} size="sm" showPresence />
+                  {unreadConversations.slice(0, 4).map((conversation) => (
+                    <Link key={conversation.id} to={`/messages/${conversation.id}`} className="list-row">
                       <span className="grow truncate">
-                        <span className="row" style={{ gap: 6 }}>
-                          <span className="truncate">{member.displayName}</span>
-                          {member.isOwner && <OwnerBadge compact />}
-                        </span>
-                        <span className="tiny muted truncate">@{member.username}</span>
+                        <span className="truncate">{conversationTitle(conversation)}</span>
+                        <span className="tiny muted truncate">{conversation.lastMessage?.authorName ?? 'New activity'}</span>
                       </span>
-                      <span className="tiny muted">{formatDate(member.createdAt, { month: 'short', day: 'numeric' })}</span>
+                      <span className="badge" data-kind="warning">
+                        {conversation.unreadCount}
+                      </span>
                     </Link>
                   ))}
                 </div>
               )}
             </section>
-          </div>
 
-          <div className="stack" style={{ gap: 16 }}>
-            <section className="card card-pad stack">
-              <div className="row" style={{ gap: 8 }}>
-                <IconShield size={18} />
-                <span style={{ fontWeight: 650 }}>Built on real security</span>
-              </div>
-              <ul className="small muted" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
-                <li>Passwords hashed with scrypt, never stored in plaintext.</li>
-                <li>Opaque session cookies, hashed at rest and revocable per device.</li>
-                <li>Every profile and directory request is authorised on the server.</li>
-                <li>Rate limits on login, registration and password reset.</li>
-              </ul>
-            </section>
-
-            <section className="card card-pad stack">
-              <div className="row" style={{ gap: 8 }}>
-                <IconCompass size={18} />
-                <span style={{ fontWeight: 650 }}>What is coming next</span>
-              </div>
-              <ol className="small muted" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.8 }}>
-                <li>Stage 2 — friends, direct messages, groups, real-time messaging.</li>
-                <li>Stage 3 — servers, channels, invitations, roles and permissions.</li>
-                <li>Stage 4 — voice, video and screen sharing.</li>
-                <li>Stage 5 — owner console, staff tools, moderation, audit logs.</li>
-                <li>Stage 6 — notifications, PWA, tablet and mobile polish.</li>
-              </ol>
-            </section>
+            {user.isOwner ? (
+              <section className="card card-pad stack">
+                <div className="row" style={{ gap: 8 }}>
+                  <IconShield size={18} />
+                  <span style={{ fontWeight: 650 }}>Owner console</span>
+                  <OwnerBadge compact />
+                </div>
+                <p className="small muted" style={{ margin: 0 }}>
+                  {stats ? `${stats.totalUsers.toLocaleString()} accounts · ${stats.onlineUsers} online now.` : 'Platform health and moderation tools.'}
+                </p>
+                <Link className="btn btn-primary" to="/owner">
+                  Open owner console
+                </Link>
+              </section>
+            ) : (
+              <section className="card card-pad stack">
+                <div className="row" style={{ gap: 8 }}>
+                  <IconSparkle size={18} />
+                  <span style={{ fontWeight: 650 }}>Chatter AI</span>
+                </div>
+                <p className="small muted" style={{ margin: 0 }}>
+                  Ask questions in a private AI chat. Only what you type there is sent to the AI provider.
+                </p>
+                <Link className="btn btn-ghost" to="/ai">
+                  Start an AI chat
+                </Link>
+              </section>
+            )}
           </div>
         </div>
       </div>
