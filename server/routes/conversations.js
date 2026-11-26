@@ -620,6 +620,91 @@ router.get(
   }),
 );
 
+const voteSchema = z.object({ optionIds: z.array(z.string().uuid()).min(1).max(10) });
+
+router.post(
+  '/:id/messages/:messageId/vote',
+  rateLimit({ windowMs: 10 * 1000, max: 30, keyPrefix: 'poll-vote' }),
+  route(async (req, res) => {
+    requireMembership(req.params.id, req.user.id);
+    const row = db
+      .prepare('SELECT * FROM messages WHERE id = ? AND conversation_id = ?')
+      .get(req.params.messageId, req.params.id);
+    if (!row || row.deleted_at) return fail(404, 'message_not_found', 'That message is no longer available.');
+
+    const poll = db.prepare('SELECT * FROM message_polls WHERE message_id = ?').get(row.id);
+    if (!poll) return fail(404, 'poll_not_found', 'That poll is no longer available.');
+
+    const parsed = voteSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return fail(400, 'invalid_input', 'Choose an option before voting.');
+
+    const validIds = new Set(
+      db.prepare('SELECT id FROM message_poll_options WHERE message_id = ?').all(row.id).map((option) => option.id),
+    );
+    const chosen = [...new Set(parsed.data.optionIds)].filter((optionId) => validIds.has(optionId));
+    if (chosen.length === 0) return fail(400, 'invalid_option', 'That poll option does not exist.');
+    if (!poll.multiple && chosen.length > 1) return fail(400, 'single_choice', 'This poll allows one choice.');
+
+    db.transaction(() => {
+      if (poll.multiple) {
+        // Multiple choice: each selected option toggles independently.
+        for (const optionId of chosen) {
+          const existing = db
+            .prepare('SELECT 1 AS present FROM message_poll_votes WHERE option_id = ? AND user_id = ?')
+            .get(optionId, req.user.id);
+          if (existing) {
+            db.prepare('DELETE FROM message_poll_votes WHERE option_id = ? AND user_id = ?').run(optionId, req.user.id);
+          } else {
+            db.prepare(
+              'INSERT INTO message_poll_votes (message_id, option_id, user_id, created_at) VALUES (?, ?, ?, ?)',
+            ).run(row.id, optionId, req.user.id, nowIso());
+          }
+        }
+        return;
+      }
+      // Single choice: voting the current option again withdraws the vote.
+      const current = db
+        .prepare('SELECT option_id FROM message_poll_votes WHERE message_id = ? AND user_id = ?')
+        .get(row.id, req.user.id);
+      const withdrawing = current?.option_id === chosen[0];
+      db.prepare('DELETE FROM message_poll_votes WHERE message_id = ? AND user_id = ?').run(row.id, req.user.id);
+      if (!withdrawing) {
+        db.prepare('INSERT INTO message_poll_votes (message_id, option_id, user_id, created_at) VALUES (?, ?, ?, ?)').run(
+          row.id,
+          chosen[0],
+          req.user.id,
+          nowIso(),
+        );
+      }
+    })();
+
+    const fresh = db.prepare('SELECT * FROM messages WHERE id = ?').get(row.id);
+    publishMessage(req.params.id, 'message:update', fresh);
+    res.json({ message: messageFor(fresh, req.user.id) });
+  }),
+);
+
+router.get(
+  '/:id/messages/:messageId/thread',
+  route(async (req, res) => {
+    requireMembership(req.params.id, req.user.id);
+    const root = db
+      .prepare('SELECT * FROM messages WHERE id = ? AND conversation_id = ?')
+      .get(req.params.messageId, req.params.id);
+    if (!root) return fail(404, 'message_not_found', 'That thread is no longer available.');
+    if (root.thread_root_id) {
+      const parent = db.prepare('SELECT * FROM messages WHERE id = ?').get(root.thread_root_id);
+      if (!parent) return fail(404, 'message_not_found', 'That thread is no longer available.');
+      return res.json({ root: messageFor(parent, req.user.id), replies: [messageFor(root, req.user.id)] });
+    }
+
+    const replies = db
+      .prepare('SELECT * FROM messages WHERE thread_root_id = ? ORDER BY created_at ASC, id ASC LIMIT 100')
+      .all(root.id);
+    res.json({ root: messageFor(root, req.user.id), replies: replies.map((reply) => messageFor(reply, req.user.id)) });
+  }),
+);
+
 const readSchema = z.object({ messageId: z.string().uuid().optional() });
 
 router.post(
