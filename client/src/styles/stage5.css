@@ -85,7 +85,7 @@
 
 .owner-tab[data-active='true'] {
   color: #04121d;
-  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+  background: linear-gradient(135deg, var(--accent-400), var(--accent-500));
   border-color: rgba(94, 231, 255, 0.55);
   box-shadow: 0 8px 22px rgba(56, 189, 248, 0.28);
 }
@@ -285,7 +285,7 @@
 }
 
 .owner-check input {
-  accent-color: var(--accent-cyan);
+  accent-color: var(--accent-400);
 }
 
 .owner-confirm {
@@ -345,7 +345,7 @@
 .owner-audit-action {
   font-family: 'SFMono-Regular', ui-monospace, monospace;
   font-size: 0.78rem;
-  color: var(--accent-cyan);
+  color: var(--accent-400);
 }
 
 .owner-empty {
