@@ -166,18 +166,18 @@ export default function TutorialOverlay({
             </div>
 
             <span className="tour-icon" aria-hidden="true">
-              {lesson.icon}
+              {lesson.number}
             </span>
             <h2 className="tour-title">{lesson.title}</h2>
-            <p className="tour-body">{lesson.body}</p>
-            {lesson.tips.length > 0 && (
+            <p className="tour-body">{lesson.summary}</p>
+            {lesson.points.length > 0 && (
               <ul className="tour-tips">
-                {lesson.tips.map((tip) => (
+                {lesson.points.map((tip) => (
                   <li key={tip}>{tip}</li>
                 ))}
               </ul>
             )}
-            {lesson.note && <p className="tour-note">{lesson.note}</p>}
+            {lesson.fallbackNote && <p className="tour-note">{lesson.fallbackNote}</p>}
 
             <div className="tour-actions">
               <button
