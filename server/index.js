@@ -15,6 +15,7 @@ import { router as realtimeRouter } from './routes/realtime.js';
 import { router as serversRouter } from './routes/servers.js';
 import { router as invitesRouter } from './routes/invites.js';
 import { router as callsRouter } from './routes/calls.js';
+import { router as adminRouter } from './routes/admin.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -104,6 +105,7 @@ app.use('/api/realtime', realtimeRouter);
 app.use('/api/servers', serversRouter);
 app.use('/api/invites', invitesRouter);
 app.use('/api/calls', callsRouter);
+app.use('/api/admin', adminRouter);
 
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: { code: 'not_found', message: 'That endpoint does not exist.' } });
