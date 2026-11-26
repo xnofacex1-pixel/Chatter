@@ -106,3 +106,93 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 
 CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_logs (created_at DESC);
+
+-- ---------------------------------------------------------------------------
+-- Stage 2: friends, direct conversations, groups and realtime messaging
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS friendships (
+  user_a_id  TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_b_id  TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (user_a_id, user_b_id),
+  CHECK (user_a_id < user_b_id)
+);
+CREATE INDEX IF NOT EXISTS idx_friendships_b ON friendships (user_b_id);
+
+CREATE TABLE IF NOT EXISTS friend_requests (
+  id           TEXT PRIMARY KEY,
+  from_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  to_user_id   TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  message      TEXT,
+  status       TEXT NOT NULL DEFAULT 'pending',
+  created_at   TEXT NOT NULL,
+  responded_at TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_friend_requests_pending
+  ON friend_requests (from_user_id, to_user_id) WHERE status = 'pending';
+CREATE INDEX IF NOT EXISTS idx_friend_requests_to ON friend_requests (to_user_id, status);
+CREATE INDEX IF NOT EXISTS idx_friend_requests_from ON friend_requests (from_user_id, status);
+
+CREATE TABLE IF NOT EXISTS blocked_users (
+  blocker_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  blocked_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (blocker_id, blocked_id)
+);
+
+CREATE TABLE IF NOT EXISTS conversations (
+  id            TEXT PRIMARY KEY,
+  kind          TEXT NOT NULL,
+  dm_key        TEXT UNIQUE,
+  title         TEXT,
+  icon_media_id TEXT,
+  created_by    TEXT REFERENCES users(id) ON DELETE SET NULL,
+  created_at    TEXT NOT NULL,
+  updated_at    TEXT NOT NULL,
+  last_message_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_conversations_last ON conversations (last_message_at DESC);
+
+CREATE TABLE IF NOT EXISTS conversation_members (
+  conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  user_id         TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role            TEXT NOT NULL DEFAULT 'member',
+  joined_at       TEXT NOT NULL,
+  last_read_at    TEXT,
+  muted           INTEGER NOT NULL DEFAULT 0,
+  archived        INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (conversation_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_conversation_members_user ON conversation_members (user_id);
+
+CREATE TABLE IF NOT EXISTS messages (
+  id              TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  author_id       TEXT REFERENCES users(id) ON DELETE SET NULL,
+  body            TEXT NOT NULL DEFAULT '',
+  reply_to_id     TEXT REFERENCES messages(id) ON DELETE SET NULL,
+  created_at      TEXT NOT NULL,
+  edited_at       TEXT,
+  deleted_at      TEXT,
+  pinned_at       TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages (conversation_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_messages_author ON messages (author_id);
+
+CREATE TABLE IF NOT EXISTS message_attachments (
+  id         TEXT PRIMARY KEY,
+  message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  media_id   TEXT NOT NULL REFERENCES media(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_message_attachments_message ON message_attachments (message_id);
+CREATE INDEX IF NOT EXISTS idx_message_attachments_media ON message_attachments (media_id);
+
+CREATE TABLE IF NOT EXISTS message_reactions (
+  message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  emoji      TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (message_id, user_id, emoji)
+);
