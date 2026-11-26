@@ -45,6 +45,9 @@ ensureColumn('user_settings', 'speaker_device', 'TEXT');
 ensureColumn('user_settings', 'camera_device', 'TEXT');
 ensureColumn('user_settings', 'notif_reactions', 'INTEGER NOT NULL DEFAULT 1');
 ensureColumn('user_settings', 'notif_announcements', 'INTEGER NOT NULL DEFAULT 1');
+// Threads: a reply keeps its conversation but points at the message that started the thread.
+ensureColumn('messages', 'thread_root_id', 'TEXT');
+db.exec('CREATE INDEX IF NOT EXISTS idx_messages_thread ON messages (thread_root_id)');
 
 export const uploadsPath = uploadsDir;
 

@@ -197,6 +197,30 @@ CREATE TABLE IF NOT EXISTS message_reactions (
   PRIMARY KEY (message_id, user_id, emoji)
 );
 
+CREATE TABLE IF NOT EXISTS message_polls (
+  message_id TEXT PRIMARY KEY REFERENCES messages(id) ON DELETE CASCADE,
+  question   TEXT NOT NULL,
+  multiple   INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS message_poll_options (
+  id         TEXT PRIMARY KEY,
+  message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  label      TEXT NOT NULL,
+  position   INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_poll_options_message ON message_poll_options (message_id, position);
+
+CREATE TABLE IF NOT EXISTS message_poll_votes (
+  message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  option_id  TEXT NOT NULL REFERENCES message_poll_options(id) ON DELETE CASCADE,
+  user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (option_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_poll_votes_message ON message_poll_votes (message_id, user_id);
+
 -- ---------------------------------------------------------------------------
 -- Stage 3: servers (communities), roles, permissions, channels, invites
 -- ---------------------------------------------------------------------------
