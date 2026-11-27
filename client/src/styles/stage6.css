@@ -34,7 +34,7 @@
   padding: 13px 14px;
   border-radius: 16px;
   border: 1px solid var(--border, rgba(120, 160, 220, 0.14));
-  background: var(--panel, rgba(16, 27, 45, 0.72));
+  background: var(--panel, rgba(27, 27, 40, 0.72));
   text-align: left;
   width: 100%;
   cursor: pointer;
@@ -42,13 +42,13 @@
 }
 
 .notif-item:hover {
-  border-color: var(--accent-border, rgba(56, 189, 248, 0.4));
+  border-color: var(--accent-border, rgba(118, 85, 245, 0.4));
   transform: translateY(-1px);
 }
 
 .notif-item[data-unread='true'] {
-  background: linear-gradient(120deg, rgba(56, 189, 248, 0.12), rgba(16, 27, 45, 0.72));
-  border-color: rgba(56, 189, 248, 0.32);
+  background: linear-gradient(120deg, rgba(118, 85, 245, 0.12), rgba(27, 27, 40, 0.72));
+  border-color: rgba(118, 85, 245, 0.32);
 }
 
 .notif-item .notif-body {
@@ -90,7 +90,7 @@
 }
 
 .notif-type[data-tone='accent'] {
-  border-color: rgba(56, 189, 248, 0.45);
+  border-color: rgba(118, 85, 245, 0.45);
   color: #7dd3fc;
 }
 
@@ -118,7 +118,7 @@
   text-align: center;
   border-radius: 18px;
   border: 1px dashed rgba(120, 160, 220, 0.22);
-  background: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.08), transparent 70%);
+  background: radial-gradient(circle at 50% 0%, rgba(118, 85, 245, 0.08), transparent 70%);
   color: var(--text-muted, #8fa3c0);
   font-size: 13px;
 }
@@ -134,8 +134,8 @@
   align-items: center;
   padding: 14px 16px;
   border-radius: 16px;
-  border: 1px solid rgba(56, 189, 248, 0.28);
-  background: linear-gradient(130deg, rgba(56, 189, 248, 0.12), rgba(16, 27, 45, 0.8));
+  border: 1px solid rgba(118, 85, 245, 0.28);
+  background: linear-gradient(130deg, rgba(118, 85, 245, 0.12), rgba(27, 27, 40, 0.8));
 }
 
 .install-card .install-logo {

@@ -87,7 +87,7 @@
   color: #04121d;
   background: linear-gradient(135deg, var(--accent-400), var(--accent-500));
   border-color: rgba(94, 231, 255, 0.55);
-  box-shadow: 0 8px 22px rgba(56, 189, 248, 0.28);
+  box-shadow: 0 8px 22px rgba(118, 85, 245, 0.28);
 }
 
 .owner-grid {
