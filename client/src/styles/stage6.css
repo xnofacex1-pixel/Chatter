@@ -12,8 +12,8 @@
   height: 16px;
   padding: 0 4px;
   border-radius: 99px;
-  background: linear-gradient(140deg, var(--accent, #38bdf8), var(--accent-2, #22d3ee));
-  color: #04121f;
+  background: linear-gradient(140deg, var(--accent-500, #7655f5), var(--accent-secondary, #a78bfa));
+  color: #ffffff;
   font-size: 10px;
   font-weight: 800;
   display: grid;
@@ -143,8 +143,8 @@
   height: 42px;
   border-radius: 12px;
   flex-shrink: 0;
-  background: linear-gradient(140deg, #38bdf8, #22d3ee 55%, #6366f1);
-  box-shadow: 0 0 22px rgba(56, 189, 248, 0.35);
+  background: linear-gradient(140deg, #7655f5, #9b7bff 55%, #a78bfa);
+  box-shadow: 0 0 22px rgba(118, 85, 245, 0.35);
 }
 
 .install-card .install-copy {
@@ -200,7 +200,7 @@
   height: 100%;
   width: 0%;
   border-radius: 99px;
-  background: linear-gradient(90deg, #38bdf8, #22d3ee);
+  background: linear-gradient(90deg, #7655f5, #a78bfa);
   transition: width 0.12s linear;
 }
 
