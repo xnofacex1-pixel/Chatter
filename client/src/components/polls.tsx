@@ -59,7 +59,7 @@ export function PollCard({
                 textAlign: 'left',
                 padding: '9px 11px',
                 borderRadius: 10,
-                border: `1px solid ${mine ? '#22d3ee' : 'rgba(255,255,255,0.10)'}`,
+                border: `1px solid ${mine ? 'var(--accent-500)' : 'rgba(255,255,255,0.10)'}`,
                 background: 'transparent',
                 color: 'inherit',
                 cursor: canVote ? 'pointer' : 'default',
