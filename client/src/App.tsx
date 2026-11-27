@@ -5,6 +5,7 @@ import { LoadingScreen } from './components/LoadingScreen';
 import { LogoMark } from './components/Logo';
 import { AuthProvider, useAuth } from './lib/auth';
 import { CallProvider } from './lib/call-context';
+import { TourProvider } from './lib/tour';
 import CallOverlay from './components/CallOverlay';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -83,6 +84,7 @@ export default function App() {
           <BrowserRouter>
             <CallProvider>
               <CallOverlay />
+              <TourProvider>
               <Routes>
               <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
               <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
@@ -106,6 +108,7 @@ export default function App() {
               <Route path="/u/:username" element={<ProtectedRoute><ProfileView /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+              </TourProvider>
             </CallProvider>
           </BrowserRouter>
         </AuthProvider>
