@@ -25,7 +25,7 @@ export default function Profile() {
     pronouns: '',
     customStatus: '',
     aboutMe: '',
-    accentColor: '#22d3ee',
+    accentColor: '#7655f5',
     bannerColor: '#0f2b46',
   });
 
@@ -36,7 +36,7 @@ export default function Profile() {
       pronouns: user.pronouns ?? '',
       customStatus: user.customStatus ?? '',
       aboutMe: user.aboutMe ?? '',
-      accentColor: user.accentColor || '#22d3ee',
+      accentColor: user.accentColor || '#7655f5',
       bannerColor: user.bannerColor || '#0f2b46',
     });
   }, [user]);
