@@ -6,9 +6,9 @@ export function LogoMark({ size = 40 }: { size?: number }) {
     <svg width={size} height={size} viewBox="0 0 64 64" role="img" aria-label="Chatter logo">
       <defs>
         <linearGradient id="chatter-mark" x1="6" y1="4" x2="58" y2="60" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#67e8f9" />
-          <stop offset="0.5" stopColor="#38bdf8" />
-          <stop offset="1" stopColor="#6366f1" />
+          <stop offset="0" stopColor="#bfa6ff" />
+          <stop offset="0.5" stopColor="#9b7bff" />
+          <stop offset="1" stopColor="#7655f5" />
         </linearGradient>
         <linearGradient id="chatter-spark" x1="30" y1="20" x2="46" y2="40" gradientUnits="userSpaceOnUse">
           <stop offset="0" stopColor="#ffffff" />
@@ -38,7 +38,7 @@ export function Logo({ size = 40, withWordmark = true, subtitle }: LogoProps) {
               fontWeight: 800,
               letterSpacing: '0.14em',
               textTransform: 'uppercase',
-              background: 'linear-gradient(100deg, #e8fbff, #67e8f9 45%, #a5b4fc)',
+              background: 'linear-gradient(100deg, #f2edff, #bfa6ff 45%, #a78bfa)',
               WebkitBackgroundClip: 'text',
               backgroundClip: 'text',
               color: 'transparent',
