@@ -71,7 +71,7 @@ async function waitForServer() {
   for (let attempt = 0; attempt < 80; attempt += 1) {
     try {
       const res = await fetch(`${BASE}/api/auth/session`);
-      if (res.ok) return;
+      if (res.status === 200 || res.status === 401) return;
     } catch {
       /* not listening yet */
     }
