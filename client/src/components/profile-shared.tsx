@@ -5,15 +5,15 @@ import { useToast } from '../components/Toast';
 import { describeError } from '../lib/validation';
 
 export const ACCENTS = [
-  { id: 'cyan', label: 'Neon cyan', value: '#22d3ee' },
+  { id: 'violet', label: 'Chatter violet', value: '#7655f5' },
   { id: 'blue', label: 'Electric blue', value: '#3b82f6' },
-  { id: 'violet', label: 'Ultra violet', value: '#8b5cf6' },
+  { id: 'cyan', label: 'Neon cyan', value: '#22d3ee' },
   { id: 'emerald', label: 'Emerald', value: '#10b981' },
   { id: 'rose', label: 'Rose', value: '#f43f5e' },
   { id: 'amber', label: 'Amber', value: '#f59e0b' },
 ] as const;
 
-export const BANNERS = ['#0f2b46', '#14314f', '#1b2a52', '#2a1d4a', '#0e3a3a', '#3a1f2e'] as const;
+export const BANNERS = ['#241a4d', '#1d1840', '#2a1d4a', '#12121c', '#1b1b28', '#33205e'] as const;
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
