@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TutorialOverlay from '../components/TutorialOverlay';
+import { useAuth } from './auth';
 import {
   LESSONS,
   emptyProgress,
@@ -50,6 +51,7 @@ const TourContext = createContext<TourValue | null>(null);
 
 export function TourProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
+  const { authenticated } = useAuth();
   const [progress, setProgress] = useState<TutorialProgress>(emptyProgress);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -60,6 +62,12 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const [replayOnly, setReplayOnly] = useState(false);
 
   const refresh = useCallback(async () => {
+    if (!authenticated) {
+      // Guest pages (login, register) must not fire an authenticated request.
+      setProgress(emptyProgress);
+      setLoading(false);
+      return;
+    }
     try {
       const data = await tutorialApi.get();
       setProgress(data.progress);
@@ -69,7 +77,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [authenticated]);
 
   useEffect(() => {
     void refresh();
