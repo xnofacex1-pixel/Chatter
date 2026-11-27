@@ -143,7 +143,7 @@ export default function TutorialCelebration({
           <svg viewBox="0 0 64 64" width="72" height="72" role="presentation">
             <defs>
               <linearGradient id="celebrate-gradient" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#22d3ee" />
+                <stop offset="0%" stopColor="#7655f5" />
                 <stop offset="100%" stopColor="#3b82f6" />
               </linearGradient>
             </defs>
@@ -155,8 +155,8 @@ export default function TutorialCelebration({
               strokeWidth="3"
               strokeLinejoin="round"
             />
-            <circle cx="26" cy="35" r="2.4" fill="#22d3ee" />
-            <circle cx="34" cy="35" r="2.4" fill="#38bdf8" />
+            <circle cx="26" cy="35" r="2.4" fill="#7655f5" />
+            <circle cx="34" cy="35" r="2.4" fill="#a78bfa" />
             <circle cx="42" cy="35" r="2.4" fill="#60a5fa" />
           </svg>
         </div>
