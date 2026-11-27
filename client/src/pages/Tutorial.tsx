@@ -1,130 +1,19 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppShell } from '../components/AppShell';
 import TutorialCelebration from '../components/TutorialCelebration';
-import TutorialOverlay from '../components/TutorialOverlay';
 import { useAuth } from '../lib/auth';
 import { getSoundSettings, saveSoundSettings } from '../lib/sounds';
-import {
-  LESSONS,
-  TOTAL_LESSONS,
-  emptyProgress,
-  tutorialApi,
-  type LessonId,
-  type TutorialProgress,
-} from '../lib/tutorial';
-
-type Mode = 'intro' | 'running' | 'celebrate';
+import { useTour } from '../lib/tour';
+import { LESSONS, TOTAL_LESSONS } from '../lib/tutorial';
 
 export default function Tutorial() {
   const { user, settings } = useAuth();
   const navigate = useNavigate();
-  const [progress, setProgress] = useState<TutorialProgress>(emptyProgress);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [mode, setMode] = useState<Mode>('intro');
-  const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const [replayOnly, setReplayOnly] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { mode, progress, loading, saving, error, start, finish } = useTour();
   const [soundEnabled, setSoundEnabled] = useState(() => getSoundSettings().enabled);
 
   const reducedMotion = Boolean(settings?.reducedMotion);
-
-  useEffect(() => {
-    let cancelled = false;
-    tutorialApi
-      .get()
-      .then((data) => {
-        if (!cancelled) setProgress(data.progress);
-      })
-      .catch(() => {
-        if (!cancelled) setError('Tutorial progress could not be loaded. You can still take the tour.');
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const persist = useCallback(
-    async (patch: { completedLessons?: LessonId[]; lastLesson?: string | null; completed?: boolean }) => {
-      setSaving(true);
-      try {
-        const data = await tutorialApi.save(patch);
-        setProgress(data.progress);
-        setError(null);
-      } catch {
-        setError('Progress could not be saved right now — it will sync the next time you finish a lesson.');
-      } finally {
-        setSaving(false);
-      }
-    },
-    [],
-  );
-
-  const start = useCallback(
-    (fromIndex: number, single: boolean) => {
-      const lesson = LESSONS[fromIndex];
-      if (!lesson) return;
-      setIndex(fromIndex);
-      setReplayOnly(single);
-      setPaused(false);
-      setMode('running');
-      void persist({ lastLesson: lesson.id });
-      navigate(lesson.path);
-    },
-    [navigate, persist],
-  );
-
-  const advance = useCallback(() => {
-    const lesson = LESSONS[index];
-    if (!lesson) return;
-    const completedLessons = Array.from(
-      new Set<LessonId>([...progress.completedLessons, lesson.id]),
-    );
-    const isLast = index + 1 >= LESSONS.length;
-
-    if (replayOnly) {
-      void persist({ completedLessons });
-      setMode('intro');
-      navigate('/tutorial');
-      return;
-    }
-
-    if (isLast) {
-      setProgress((prev) => ({ ...prev, completedLessons }));
-      void persist({ completedLessons, completed: true });
-      setMode('celebrate');
-      return;
-    }
-
-    setProgress((prev) => ({ ...prev, completedLessons }));
-    void persist({ completedLessons, lastLesson: LESSONS[index + 1]?.id ?? null });
-    setIndex((value) => value + 1);
-    navigate(LESSONS[index + 1]?.path ?? '/');
-  }, [index, navigate, persist, progress.completedLessons, replayOnly]);
-
-  const back = useCallback(() => {
-    if (index === 0) return;
-    const previous = index - 1;
-    setIndex(previous);
-    navigate(LESSONS[previous]?.path ?? '/');
-  }, [index, navigate]);
-
-  const skip = useCallback(() => {
-    setMode('intro');
-    setPaused(false);
-    setReplayOnly(false);
-    navigate('/tutorial');
-  }, [navigate]);
-
-  const enterChatter = useCallback(() => {
-    setMode('intro');
-    navigate('/');
-  }, [navigate]);
 
   const toggleSound = useCallback(() => {
     setSoundEnabled((current) => {
@@ -142,30 +31,12 @@ export default function Tutorial() {
     [progress.lastLesson],
   );
 
-  const lesson = LESSONS[index];
-
   return (
-    <AppShell
-      title="Tutorial"
-      subtitle="A guided tour of everything Chatter can do"
-    >
+    <AppShell title="Tutorial" subtitle="A guided tour of everything Chatter can do">
       <div className="page tutorial-page">
-        {mode === 'running' && lesson && (
-          <TutorialOverlay
-            lesson={lesson}
-            index={index}
-            total={LESSONS.length}
-            paused={paused}
-            onNext={advance}
-            onBack={back}
-            onSkip={skip}
-            onTogglePause={() => setPaused((value) => !value)}
-          />
-        )}
-
         {mode === 'celebrate' && (
           <TutorialCelebration
-            onEnter={enterChatter}
+            onEnter={finish}
             reducedMotion={reducedMotion}
             soundEnabled={soundEnabled}
             onToggleSound={toggleSound}
@@ -214,7 +85,9 @@ export default function Tutorial() {
                 <button
                   type="button"
                   className="btn btn-primary btn-lg"
-                  onClick={() => start(progress.completed ? 0 : Math.min(completedCount, TOTAL_LESSONS - 1), false)}
+                  onClick={() =>
+                    start(progress.completed ? 0 : Math.min(completedCount, TOTAL_LESSONS - 1), false)
+                  }
                 >
                   {progress.completed || completedCount > 0 ? 'Restart tutorial' : 'Start tutorial'}
                 </button>
