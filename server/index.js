@@ -123,6 +123,74 @@ app.use('/api', (_req, res) => {
 const clientDir = path.join(here, '..', 'client', 'dist');
 const indexFile = path.join(clientDir, 'index.html');
 
+// Route-aware document metadata. Every route previously shared one <title>, so browser
+// tabs, history entries and link previews were indistinguishable. The boot shell now
+// states the route's own heading, which also gives the first paint real content before
+// the client bundle mounts (and a meaningful fallback if the bundle never loads).
+const ROUTE_SHELL = {
+  '/': {
+    title: 'Chatter — Your community. Your conversations.',
+    heading: 'Your community. Your conversations.',
+    blurb: 'Chatter brings messages, communities and calls together in one polished workspace.',
+  },
+  '/login': {
+    title: 'Welcome back · Chatter',
+    heading: 'Welcome back',
+    blurb: 'Sign in to pick up where your conversations left off.',
+  },
+  '/register': {
+    title: 'Create your account · Chatter',
+    heading: 'Create your account',
+    blurb: 'Join Chatter and start your first conversation.',
+  },
+  '/tutorial': {
+    title: 'Chatter tutorial · Chatter',
+    heading: 'Welcome to Chatter',
+    blurb: 'A guided tour of Chatter in eleven short lessons.',
+  },
+  '/support': {
+    title: 'Support · Chatter',
+    heading: 'Support',
+    blurb: 'Create a ticket and the Chatter team will help you out.',
+  },
+};
+
+const escapeHtml = (value) =>
+  String(value).replace(/[&<>\"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[char]);
+
+let shellHtml = null;
+try {
+  shellHtml = fs.readFileSync(indexFile, 'utf8');
+} catch {
+  shellHtml = null;
+}
+
+function bootShell(meta) {
+  return (
+    '<div class="boot">' +
+    '<div class="boot-inner"><div class="boot-mark"></div>' +
+    '<div class="boot-title">Chatter</div>' +
+    `<div class="boot-sub">${escapeHtml(meta.heading)} — ${escapeHtml(meta.blurb)}</div>` +
+    '<div class="boot-bar"><span></span></div></div></div>'
+  );
+}
+
+function renderShell(pathname) {
+  const meta = ROUTE_SHELL[pathname];
+  if (!shellHtml || !meta) return null;
+  const rootOpen = shellHtml.indexOf('<div id="root">');
+  const scriptTag = shellHtml.indexOf('<script type="module"');
+  if (rootOpen === -1 || scriptTag === -1 || scriptTag < rootOpen) return null;
+  const head = shellHtml
+    .slice(0, rootOpen)
+    .replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(meta.title)}</title>`)
+    .replace(
+      /<meta name="description" content="[^"]*" \/>/,
+      `<meta name="description" content="${escapeHtml(meta.blurb)}" />`,
+    );
+  return `${head}<div id="root">${bootShell(meta)}</div>\n    ${shellHtml.slice(scriptTag)}`;
+}
+
 if (fs.existsSync(indexFile)) {
   app.use(
     express.static(clientDir, {
@@ -139,6 +207,9 @@ if (fs.existsSync(indexFile)) {
   app.use((req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
     res.set('Cache-Control', 'no-cache');
+    const pathname = req.path.replace(/\/+$/, '') || '/';
+    const html = renderShell(pathname);
+    if (html) return res.type('html').send(html);
     res.sendFile(indexFile);
   });
 } else {
