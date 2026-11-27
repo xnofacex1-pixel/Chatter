@@ -19,7 +19,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const DEFAULT_SETTINGS: Settings = {
   theme: 'dark',
-  accent: 'cyan',
+  accent: 'violet',
   reducedMotion: false,
   compactMode: false,
   textScale: 1,
