@@ -45,12 +45,12 @@ export function presenceLabel(presence: string): string {
 }
 
 export const ACCENT_COLOURS: { name: string; label: string; value: string }[] = [
-  { name: 'cyan', label: 'Neon Cyan', value: '#22d3ee' },
+  { name: 'violet', label: 'Chatter Violet', value: '#7655f5' },
   { name: 'blue', label: 'Electric Blue', value: '#3b82f6' },
-  { name: 'violet', label: 'Violet Pulse', value: '#8b5cf6' },
+  { name: 'cyan', label: 'Neon Cyan', value: '#22d3ee' },
   { name: 'emerald', label: 'Emerald', value: '#10b981' },
   { name: 'rose', label: 'Rose', value: '#f43f5e' },
   { name: 'amber', label: 'Amber', value: '#f59e0b' },
 ];
 
-export const PROFILE_COLOURS = ['#22d3ee', '#38bdf8', '#6366f1', '#8b5cf6', '#10b981', '#f59e0b', '#f43f5e', '#64748b'];
+export const PROFILE_COLOURS = ['#7655f5', '#a78bfa', '#8b5cf6', '#6366f1', '#3b82f6', '#22d3ee', '#10b981', '#f59e0b', '#f43f5e', '#64748b'];
