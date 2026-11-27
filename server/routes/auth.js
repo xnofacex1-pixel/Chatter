@@ -172,12 +172,17 @@ router.get(
   '/session',
   route(async (req, res) => {
     const found = currentSessionUser(req);
-    if (!found) return res.json({ user: null, settings: null });
+    // Unauthenticated callers get 401, matching /api/me. The client bootstrap treats a
+    // failed session probe as "signed out", so this is the same outcome for the app while
+    // the API no longer reports success for a request that carries no session.
+    if (!found) {
+      return res.status(401).json({ error: { code: 'unauthenticated', message: 'No active session.' } });
+    }
     touchPresence(found.session.user_id);
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(found.session.user_id);
     if (!user || user.is_banned) {
       clearSessionCookie(res);
-      return res.json({ user: null, settings: null });
+      return res.status(401).json({ error: { code: 'unauthenticated', message: 'No active session.' } });
     }
     res.json({ user: publicUser(user, { includeEmail: true }), settings: settingsFor(user.id) });
   }),
