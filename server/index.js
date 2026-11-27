@@ -179,16 +179,22 @@ function renderShell(pathname) {
   const meta = ROUTE_SHELL[pathname];
   if (!shellHtml || !meta) return null;
   const rootOpen = shellHtml.indexOf('<div id="root">');
-  const scriptTag = shellHtml.indexOf('<script type="module"');
-  if (rootOpen === -1 || scriptTag === -1 || scriptTag < rootOpen) return null;
+  const bodyEnd = shellHtml.indexOf('</body>');
+  if (rootOpen === -1 || bodyEnd === -1 || bodyEnd < rootOpen) return null;
   const head = shellHtml
     .slice(0, rootOpen)
     .replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(meta.title)}</title>`)
     .replace(
-      /<meta name="description" content="[^"]*" \/>/,
+      /<meta name="description" content="[^"]*"\s*\/?>/,
       `<meta name="description" content="${escapeHtml(meta.blurb)}" />`,
     );
-  return `${head}<div id="root">${bootShell(meta)}</div>\n    ${shellHtml.slice(scriptTag)}`;
+  // Vite emits the module script into <head> for production builds, so the bundle must not be
+  // assumed to sit after the root node. Keep every script between root and </body> (dev markup)
+  // and leave anything already in <head> untouched.
+  const trailingScripts = (shellHtml.slice(rootOpen, bodyEnd).match(/<script[\s\S]*?<\/script>/g) || []).join(
+    '\n    ',
+  );
+  return `${head}<div id="root">${bootShell(meta)}</div>\n    ${trailingScripts}\n  ${shellHtml.slice(bodyEnd)}`;
 }
 
 if (fs.existsSync(indexFile)) {
